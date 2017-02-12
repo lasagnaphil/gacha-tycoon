@@ -10,8 +10,13 @@ function Frame:initialize(posX, posY, pivotX, pivotY, width, height, parent)
     self.height = height or 100
     self.parent = parent or nil
     self.absX, self.absY = self:getAbsolutePos()
+    self.anchor = {
+        minX = 0, maxX = 0,
+        minY = 0, maxY = 0
+    }
     self.children = {}
     self.interactive = false
+    lui:addFrame(self)
 end
 
 function Frame:setParent(parent)

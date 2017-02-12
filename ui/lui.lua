@@ -1,9 +1,11 @@
 local class = require "lib.middleclass"
 
 lui = {}
-local Frame = require "ui.frame"
-local Panel = require "ui.panel"
-local Button = require "ui.button"
+
+lui.Frame = require "ui.frame"
+lui.Panel = require "ui.panel"
+lui.Button = require "ui.button"
+lui.ProgressBar = require "ui.progress_bar"
 
 -- all the frames
 lui.frames = {}
@@ -15,13 +17,14 @@ end
 
 function lui:addFrame(frame)
     self.frames[#self.frames + 1] = frame
-    if frame.interactive then
-        self.iframes[#self.iframes + 1] = frame
-    end
+end
+
+function lui:addInteractiveFrame(frame)
+    self.iframes[#self.iframes + 1] = frame
 end
 
 function lui:setRootSize(w, h)
-    Frame.static.setRootSize(w, h)
+    self.Frame.static.setRootSize(w, h)
 end
 
 function lui:draw()
@@ -43,20 +46,17 @@ function lui:released(x, y, button)
 end
 
 function lui:newFrame(...)
-    local frame = Frame:new(...)
-    self:addFrame(frame)
+    local frame = self.Frame:new(...)
     return frame
 end
 
 function lui:newPanel(...)
-    local panel = Panel:new(...)
-    self:addFrame(panel)
+    local panel = self.Panel:new(...)
     return panel
 end
 
 function lui:newButton(...)
-    local button = Button:new(...)
-    self:addFrame(button)
+    local button = self.Button:new(...)
     return button
 end
 

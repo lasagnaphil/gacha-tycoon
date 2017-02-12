@@ -1,73 +1,111 @@
 
 love.graphics.setDefaultFilter('nearest', 'nearest')
 
-local GameState = require "lib.gamestate"
+--[[
+local Monocle = require "lib.monocle"
+Monocle.new({
+    isActive = true,
+    customPrinter = false,
+    printColor = {51, 51, 51},
+    debugToggle = 'd',
+    filesToWatch = { "game.lua" }
+})
+
+Monocle.watch("FPS", function() return math.floor(1/love.timer.getDelta()) end)
+]]
+
+class = require "lib.middleclass"
 local CScreen = require "lib.cscreen"
 local inspect = require "lib.inspect"
 local flux = require "lib.flux"
-local patchy = require "lib.patchy"
-
+patchy = require "lib.patchy"
 assets = require("lib.cargo").init("assets")
-
-local lui = require "ui.lui"
+lui = require "ui.lui"
+local Stack = require "utils.stack"
+local autolove = require "utils.autolove"
 
 lui:setRootSize(160, 240)
 
-local frame
-local frame2
-local panel
-local button
+local states = {
+    Game = require "game",
+    Title = require "title"
+}
+
+local stateModules = {
+    Game = "game.lua",
+    Title = "title.lua"
+}
+
+local lastStateSave = {}
+local lastHotModified
+
+local gsm = Stack:new()
+
+
+
+function stateCall(funcName, ...)
+    for _, state in ipairs(gsm.elems) do
+        if state[funcName] then state[funcName](state, ...) end
+    end
+end
+
+function reloadGame()
+    local currentStateName = gsm:peek().name
+    gsm:pop()
+    lui:clear()
+    gsm:push(states[currentStateName]:new())
+end
+
 
 function love.load()
+    gsm:push(states.Game:new())
     CScreen.init(160, 240, true)
-
-    frame = lui:newFrame(80, 120, 0.5, 0.5, 80, 120)
-    frame2 = lui:newFrame(0, 0, 0, 0, 40, 40)
-    frame2:setParent(frame)
-
-    --local panelImage = patchy.load("img/blue_pressed.png")
-    --panel = lui:newPanel(80, 120, 0.5, 0.5, 80, 120, panelImage)
-
-    local buttonImages = {
-        normal = patchy.load("assets/img/blue.png"),
-        pressed = patchy.load("assets/img/blue_pressed.png")
-    }
-    local glyphs = " abcdefghijklmnopqrstuvwxyz" ..
-                  "ABCDEFGHIJKLMNOPQRSTUVWXYZ0" ..
-                  "123456789.,!?-+/():;%&`'*#=[]\""
-    --local defaultFont = love.graphics.newImageFont("assets/fonts/default.png", glyphs)
-    local defaultFont = love.graphics.newFont("assets/fonts/pokemon.ttf", 10)
-    button = lui:newButton(80, 120, 0.5, 0.5, 60, 30, buttonImages)
-                :setText("Hello")
-                :setFont(defaultFont)
-
-    --flux.to(frame, 4, { posX = 120, posY = 180 }):onupdate(function() frame:updatePos() end)
+    autolove:init(stateModules, states, reloadGame)
 end
 
 function love.update(dt)
     flux.update(dt)
+    stateCall("update")
+    --Monocle.update()
+    autolove:update(dt)
 end
 
 function love.draw()
     CScreen.apply()
     --frame:drawDebug()
     lui:draw()
+    stateCall("draw")
     CScreen.cease()
+    --Monocle.draw()
+    love.graphics.setColor(255, 255, 255, 255)
 end
 
+function love.textinput(t)
+    --Monocle.textinput(t)
+end
+
+function love.keypressed(key, scancode, isrepeat)
+    stateCall("keypressed")
+    if key == "r" then
+        reloadGame()
+    end
+    --Monocle.keypressed(key)
+end
 function love.resize(width, height)
     CScreen.update(width, height)
+    stateCall("resize")
 end
 
 function love.mousepressed(x, y, button, istouch)
     local tx, ty, fsv = CScreen.getInfo()
     lui:pressed(x/fsv - tx, y/fsv - ty, button)
+    stateCall("mousepressed")
 end
 
 function love.mousereleased(x, y, button, istouch)
     local tx, ty, fsv = CScreen.getInfo()
     lui:released(x/fsv - tx, y/fsv - ty, button)
-
+    stateCall("mousereleased")
 end
 
 function love.touchmoved(id, x, y, dx, dy, pressure)

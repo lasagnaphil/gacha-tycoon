@@ -1,18 +1,18 @@
 local class = require "lib.middleclass"
 
-local Frame = require "ui.frame"
-local Button = class("Button", Frame)
+local Panel = require "ui.Panel"
+local Button = class("Button", Panel)
 
 function Button:initialize(posX, posY, pivotX, pivotY, width, height, spritePatches, text, font)
-    Frame.initialize(self, posX, posY, pivotX, pivotY, width, height)
-    --[[
-        spritePatch = { normal = <patch>, pressed = <patch> }
-    ]]
     if type(spritePatches) ~= "table" then
         error("Field spritePatches should be a table!")
     end
+    Panel.initialize(self, posX, posY, pivotX, pivotY, width, height, spritePatches.normal, text, font)
+    lui:addInteractiveFrame(self)
+    --[[
+        spritePatch = { normal = <patch>, pressed = <patch> }
+    ]]
     self.spritePatches = spritePatches
-    self.sprite = spritePatches.normal
 
     local cx, cy, cw, ch = self.sprite:get_content_box(self.absX, self.absY, self.width, self.height)
     self.contentX = cx
@@ -20,21 +20,9 @@ function Button:initialize(posX, posY, pivotX, pivotY, width, height, spritePatc
     self.contentWidth = cw
     self.contentHeight = ch
 
-    self.text = text or ""
-    self.font = font
-
     self.interactive = true
     self.onPress = function() end
     self.onRelease = function() end
-end
-
-function Button:setText(text)
-    self.text = text
-    return self
-end
-function Button:setFont(font)
-    self.font = font
-    return self
 end
 
 function Button:onPress(onPress)
@@ -64,17 +52,6 @@ function Button:onReleaseInternal(x, y, button)
         self.sprite = self.spritePatches.normal
         self.onRelease()
     end
-end
-
-function Button:draw()
-    local cx, cy, cw, ch = self.sprite:draw(self.absX, self.absY, self.width, self.height)
-    self.contentX = cx
-    self.contentY = cy
-    self.contentWidth = cw
-    self.contentHeight = ch
-    love.graphics.setFont(self.font)
-    local fontHeight = self.font:getHeight()
-    love.graphics.printf(self.text, cx, cy + ch/2 - fontHeight/2, cw, "center")
 end
 
 return Button

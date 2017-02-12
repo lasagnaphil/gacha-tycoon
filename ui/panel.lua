@@ -1,6 +1,6 @@
 local class = require "lib.middleclass"
 local Frame = require "ui.frame"
-local MText = require "ui.text_mixin"
+local MText = require "ui.mixins.text"
 
 local Panel = class("Panel", Frame)
 Panel:include(MText)
@@ -18,6 +18,11 @@ function Panel:initialize(posX, posY, pivotX, pivotY, width, height, spritePatch
     self.text = text or ""
     self.font = font
     self.fontColor = {255, 255, 255, 255}
+end
+
+function Panel:setSpritePatch(spritePatch)
+    self.sprite = spritePatch
+    return self
 end
 
 function Panel:draw()

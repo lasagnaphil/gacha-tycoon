@@ -6,6 +6,7 @@ lui.Frame = require "ui.frame"
 lui.Panel = require "ui.panel"
 lui.Button = require "ui.button"
 lui.ProgressBar = require "ui.progress_bar"
+lui.ScrollList = require "ui.scroll_list"
 
 -- all the frames
 lui.frames = {}

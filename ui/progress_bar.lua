@@ -1,6 +1,6 @@
 local Frame = require "ui.Frame"
 local ProgressBar = class("ProgressBar", Frame)
-local MText = require "ui.text_mixin"
+local MText = require "ui.mixins.text"
 ProgressBar:include(MText)
 
 function ProgressBar:initialize(posX, posY, pivotX, pivotY, width, height, parent)

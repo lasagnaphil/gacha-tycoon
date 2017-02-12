@@ -66,6 +66,12 @@ function Game:initialize()
         :setText("Stats")
         :setFont(defaultFont)
 
+    self.ui.scrollList = lui.ScrollList:new(80, 40, 0.5, 0, 135, 150, buttonImages.yellow.normal)
+        :addDefaultEntry(buttonImages.green.pressed, "Hello World", defaultFont, {255, 255, 255, 255})
+        :addDefaultEntry(buttonImages.green.pressed, "Hello World", defaultFont, {255, 255, 255, 255})
+        :addDefaultEntry(buttonImages.green.pressed, "Hello World", defaultFont, {255, 255, 255, 255})
+        :addDefaultEntry(buttonImages.green.pressed, "Hello World", defaultFont, {255, 255, 255, 255})
+
     --flux.to(frame, 4, { posX = 120, posY = 180 }):onupdate(function() frame:updatePos() end)
 end
 

@@ -1,7 +1,10 @@
 local class = require "lib.middleclass"
 
 local Panel = require "ui.Panel"
+local MInteractive = require "ui.mixins.interactive"
+
 local Button = class("Button", Panel)
+Button:include(MInteractive)
 
 function Button:initialize(posX, posY, pivotX, pivotY, width, height, spritePatches, text, font)
     if type(spritePatches) ~= "table" then
@@ -20,38 +23,7 @@ function Button:initialize(posX, posY, pivotX, pivotY, width, height, spritePatc
     self.contentWidth = cw
     self.contentHeight = ch
 
-    self.interactive = true
-    self.onPress = function() end
-    self.onRelease = function() end
-end
-
-function Button:onPress(onPress)
-    self.onPress = onPress
-    return self
-end
-
-function Button:onRelease(onRelease)
-    self.onRelease = onRelease
-    return self
-end
-
-function Button:onPressInternal(x, y, button)
-    local isPointerIn = self.absX < x and x < self.absX + self.width and
-                        self.absY < y and y < self.absY + self.height
-    print("" .. x .. " " .. y)
-    if isPointerIn then
-        self.sprite = self.spritePatches.pressed
-        self.onPress()
-    end
-end
-function Button:onReleaseInternal(x, y, button)
-    local isPointerIn = self.absX < x and x < self.absX + self.width and
-                        self.absY < y and y < self.absY + self.height
-    if isPointerIn then
-        print("World")
-        self.sprite = self.spritePatches.normal
-        self.onRelease()
-    end
+    self:interactiveInit()
 end
 
 return Button

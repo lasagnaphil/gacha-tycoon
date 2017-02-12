@@ -28,20 +28,19 @@ lui:setRootSize(160, 240)
 
 local states = {
     Game = require "game",
-    Title = require "title"
+    Title = require "title",
 }
 
 local stateModules = {
     Game = "game.lua",
-    Title = "title.lua"
+    Title = "title.lua",
+
 }
 
 local lastStateSave = {}
 local lastHotModified
 
 local gsm = Stack:new()
-
-
 
 function stateCall(funcName, ...)
     for _, state in ipairs(gsm.elems) do
@@ -58,8 +57,9 @@ end
 
 
 function love.load()
-    gsm:push(states.Game:new())
+    lui:init()
     CScreen.init(160, 240, true)
+    gsm:push(states.Game:new())
     autolove:init(stateModules, states, reloadGame)
 end
 

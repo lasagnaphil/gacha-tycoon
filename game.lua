@@ -11,7 +11,7 @@ function Game:initialize()
         },
         green = {
             normal = patchy.load("assets/img/9-Slice/Colored/green.png"),
-            pressed = patchy.load("assets/img/9-Slice/Colored/green.png")
+            pressed = patchy.load("assets/img/9-Slice/Colored/green_pressed.png")
         },
         grey = {
             normal = patchy.load("assets/img/9-Slice/Colored/grey.png"),
@@ -48,7 +48,7 @@ function Game:initialize()
 
     self.ui.ratingPanel = lui.ProgressBar:new(80, 19, 0.5, 0, 40, 10)
         :setText("Rating")
-        :setFont(defaultFont, {255, 255, 255, 255})
+        :setFont(defaultFont, {0, 0, 0, 255})
 
     self.ui.numPeoplePanel = lui:newPanel(150, 10, 1, 0, 40, 18, buttonImages.grey.pressed)
         :setText("P: 100")

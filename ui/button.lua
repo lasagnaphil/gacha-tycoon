@@ -11,7 +11,6 @@ function Button:initialize(posX, posY, pivotX, pivotY, width, height, spritePatc
         error("Field spritePatches should be a table!")
     end
     Panel.initialize(self, posX, posY, pivotX, pivotY, width, height, spritePatches.normal, text, font)
-    lui:addInteractiveFrame(self)
     --[[
         spritePatch = { normal = <patch>, pressed = <patch> }
     ]]

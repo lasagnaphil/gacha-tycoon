@@ -13,7 +13,8 @@ lui.frames = {}
 -- interactive frames
 lui.iframes = {}
 
-function lui:init()
+function lui:init(CScreenInfo)
+    self.screenInfo = CScreenInfo
 end
 
 function lui:addFrame(frame)
@@ -31,6 +32,16 @@ end
 function lui:draw()
     for _, frame in ipairs(self.frames) do
         frame:draw()
+    end
+end
+
+function lui:update(dt)
+    if love.mouse.isDown(1) then
+        local tx, ty, fsv = unpack(self.screenInfo)
+        local x, y = love.mouse.getX(), love.mouse.getY()
+        for _, frame in ipairs(self.iframes) do
+            frame:whilePressInternal(x/fsv - tx, y/fsv - ty, 1)
+        end
     end
 end
 

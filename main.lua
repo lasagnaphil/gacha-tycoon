@@ -15,7 +15,7 @@ Monocle.watch("FPS", function() return math.floor(1/love.timer.getDelta()) end)
 ]]
 
 class = require "lib.middleclass"
-local CScreen = require "lib.cscreen"
+CScreen = require "lib.cscreen"
 local inspect = require "lib.inspect"
 local flux = require "lib.flux"
 patchy = require "lib.patchy"
@@ -57,13 +57,14 @@ end
 
 
 function love.load()
-    lui:init()
     CScreen.init(160, 240, true)
+    lui:init({CScreen.getInfo()})
     gsm:push(states.Game:new())
     autolove:init(stateModules, states, reloadGame)
 end
 
 function love.update(dt)
+    lui:update(dt)
     flux.update(dt)
     stateCall("update")
     --Monocle.update()
@@ -71,6 +72,7 @@ function love.update(dt)
 end
 
 function love.draw()
+    love.graphics.setBackgroundColor(255, 239, 138, 1)
     CScreen.apply()
     --frame:drawDebug()
     lui:draw()

@@ -22,7 +22,7 @@ function Button:initialize(posX, posY, pivotX, pivotY, width, height, spritePatc
     self.contentWidth = cw
     self.contentHeight = ch
 
-    self:interactiveInit()
+    MInteractive.initialize(self)
 end
 
 return Button

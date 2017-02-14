@@ -1,5 +1,5 @@
 local Interactive = {
-    interactiveInit = function(self)
+    initialize = function(self)
         self.interactive = true
         self.onPressCallback = function() end
         self.onReleaseCallback = function() end

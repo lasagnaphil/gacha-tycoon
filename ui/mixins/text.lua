@@ -1,6 +1,7 @@
 local Text = {
-    setText = function(self, text)
+    setText = function(self, text, align)
         self.text = text
+        self.align = align or "center"
         return self
     end,
     setFont = function(self, font, color)

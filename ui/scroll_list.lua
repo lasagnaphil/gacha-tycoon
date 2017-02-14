@@ -5,7 +5,7 @@ ScrollList:include(MInteractive)
 
 function ScrollList:initialize(posX, posY, pivotX, pivotY, width, height, spritePatch)
     Panel.initialize(self, posX, posY, pivotX, pivotY, width, height, spritePatch)
-    self:interactiveInit()
+    MInteractive.initialize(self)
 
     self.entries = {}
     self.entryHeight = 20

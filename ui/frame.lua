@@ -1,5 +1,7 @@
 local class = require "lib.middleclass"
 local Frame = class("Frame")
+local BindVar = require "ui.mixins.bind_var"
+Frame:include(BindVar)
 
 function Frame:initialize(posX, posY, pivotX, pivotY, width, height, parent)
     self.posX = posX or 0
@@ -17,6 +19,7 @@ function Frame:initialize(posX, posY, pivotX, pivotY, width, height, parent)
     self.children = {}
     self.interactive = false
     lui:addFrame(self)
+    BindVar.initialize(self)
 end
 
 function Frame:setParent(parent)
@@ -50,6 +53,10 @@ function Frame:updatePos()
     for _, child in ipairs(self.children) do
         child:updatePos()
     end
+end
+
+function Frame:update(dt)
+    self:updateBindings()
 end
 
 function Frame:draw()

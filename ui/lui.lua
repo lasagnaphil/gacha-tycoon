@@ -43,6 +43,9 @@ function lui:update(dt)
             frame:whilePressInternal(x/fsv - tx, y/fsv - ty, 1)
         end
     end
+    for _, frame in ipairs(self.frames) do
+        frame:update(dt)
+    end
 end
 
 function lui:pressed(x, y, button)

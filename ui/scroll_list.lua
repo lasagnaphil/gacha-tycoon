@@ -16,12 +16,15 @@ end
 
 function ScrollList:setEntryHeight(height)
     self.entryHeight = height
+    return self
 end
 
 function ScrollList:addEntry(entry)
+    --[[
     if not entry.isInstanceOf or not entry:isInstanceOf(Frame) then
         error("Added invalid entry for scroll list")
     end
+    ]]
     entry:setPos(self.padding, #self.entries * self.entryHeight + self.padding)
          :setPivot(0, 0)
          :setSize(self.width - self.padding * 2, self.entryHeight - self.padding)

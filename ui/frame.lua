@@ -17,9 +17,18 @@ function Frame:initialize(posX, posY, pivotX, pivotY, width, height, parent)
         minY = 0, maxY = 0
     }
     self.children = {}
+    self.isEnabled = true
     self.interactive = false
     lui:addFrame(self)
     BindVar.initialize(self)
+end
+
+function Frame:setEnable(value)
+    self.isEnabled = value
+    for _, child in ipairs(self.children) do
+        child:setEnable(value)
+    end
+    return self
 end
 
 function Frame:setParent(parent)

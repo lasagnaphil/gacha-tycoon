@@ -15,9 +15,9 @@ function Autolove:init(modules, classdata, reloadCallback)
     ]]
 
     self.reloadCallback = reloadCallback
-    self.modules = modules
+    self.modules = modules or {}
     self.lastModTime = {}
-    self.classdata = classdata
+    self.classdata = classdata or {}
 
     self.status = Status.None
 
@@ -28,6 +28,15 @@ function Autolove:init(modules, classdata, reloadCallback)
         classdata[class] = love.filesystem.load(path)()
     end
 
+end
+
+function Autolove:addModule(name, path, class)
+    self.modules[name] = path
+    self.classdata[name] = class
+end
+
+function Autolove:getModule(name)
+    return self.classdata[name]
 end
 
 function Autolove:update(dt)
@@ -42,7 +51,7 @@ function Autolove:update(dt)
                 print("class " .. class .. " reloaded")
                 self.classdata[class] = loadedModule()
             else
-                print("Error while loading " .. class .. ": " .. loadedModule)
+                error("Error while loading " .. class .. ": " .. loadedModule)
             end
         end
         if isChanged then

@@ -22,7 +22,7 @@ patchy = require "lib.patchy"
 assets = require("lib.cargo").init("assets")
 lui = require "ui.lui"
 local Stack = require "utils.stack"
-local autolove = require "utils.autolove"
+autolove = require "utils.autolove"
 
 lui:setRootSize(160, 240)
 
@@ -34,7 +34,6 @@ local states = {
 local stateModules = {
     Game = "game.lua",
     Title = "title.lua",
-
 }
 
 local lastStateSave = {}
@@ -75,8 +74,8 @@ function love.draw()
     love.graphics.setBackgroundColor(255, 239, 138, 1)
     CScreen.apply()
     --frame:drawDebug()
-    lui:draw()
     stateCall("draw")
+    lui:draw()
     CScreen.cease()
     --Monocle.draw()
     love.graphics.setColor(255, 255, 255, 255)

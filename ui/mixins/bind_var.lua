@@ -1,6 +1,7 @@
 local BindVar = {
     initialize = function(self)
         self.bindings = {}
+        self.setters = {}
     end,
     bindVar = function(self, varName, getter)
         self.bindings[varName] = getter

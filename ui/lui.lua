@@ -29,9 +29,17 @@ function lui:setRootSize(w, h)
     self.Frame.static.setRootSize(w, h)
 end
 
+function recursiveDraw(frame)
+    frame:draw()
+    for _, child in ipairs(frame.children) do
+        recursiveDraw(child)
+    end
+end
 function lui:draw()
     for _, frame in ipairs(self.frames) do
-        frame:draw()
+        if frame.parent == nil and frame.isEnabled then
+            recursiveDraw(frame)
+        end
     end
 end
 
@@ -40,7 +48,9 @@ function lui:update(dt)
         local tx, ty, fsv = unpack(self.screenInfo)
         local x, y = love.mouse.getX(), love.mouse.getY()
         for _, frame in ipairs(self.iframes) do
-            frame:whilePressInternal(x/fsv - tx, y/fsv - ty, 1)
+            if frame.isEnabled then
+                frame:whilePressInternal(x/fsv - tx, y/fsv - ty, 1)
+            end
         end
     end
     for _, frame in ipairs(self.frames) do
@@ -50,13 +60,17 @@ end
 
 function lui:pressed(x, y, button)
     for _, frame in ipairs(self.iframes) do
-        frame:onPressInternal(x, y, button)
+        if frame.isEnabled then
+            frame:onPressInternal(x, y, button)
+        end
     end
 end
 
 function lui:released(x, y, button)
     for _, frame in ipairs(self.iframes) do
-        frame:onReleaseInternal(x, y, button)
+        if frame.isEnabled then
+            frame:onReleaseInternal(x, y, button)
+        end
     end
 end
 

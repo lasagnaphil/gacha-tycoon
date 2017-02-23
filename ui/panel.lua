@@ -52,12 +52,16 @@ function Panel:draw()
     self.contentWidth = cw
     self.contentHeight = ch
     if self.text and self.text ~= "" then
-        love.graphics.setFont(self.font)
-        local fontHeight = self.font:getHeight()
-        love.graphics.setColor(unpack(self.fontColor))
-        love.graphics.printf(self.text, cx, cy + ch/2 - fontHeight/2, cw, self.align)
-        love.graphics.setColor(255, 255, 255, 255)
+        self:drawText(cx, cy, cw, ch)
     end
+end
+
+function Panel:drawText(cx, cy, cw, ch)
+    love.graphics.setFont(self.font)
+    local fontHeight = self.font:getHeight()
+    love.graphics.setColor(unpack(self.fontColor))
+    love.graphics.printf(self.text, cx, cy + ch/2 - fontHeight/2, cw, self.align)
+    love.graphics.setColor(255, 255, 255, 255)
 end
 
 return Panel

@@ -70,7 +70,8 @@ end
 
 -- Get translation and scale information
 function CScreen.getInfo()
-	return tx, ty, fsv
+	return {rx = rx, ry = ry, ctr = ctr, rxv = rxv, ryv = ryu, fsv = fsv, fsvr = fsvr,
+			tx = tx, ty = ty, rwf = rwf, rhf = rhf, cr = cr, cg = cg, cb = cb, ca = ca}
 end
 
 -- Updates CScreen when the window size changes

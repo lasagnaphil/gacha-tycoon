@@ -1,4 +1,4 @@
-local Frame = require "ui.Frame"
+local Frame = require "ui.frame"
 local ProgressBar = class("ProgressBar", Frame)
 local MText = require "ui.mixins.text"
 ProgressBar:include(MText)

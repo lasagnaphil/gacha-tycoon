@@ -1,6 +1,6 @@
 local class = require "lib.middleclass"
 
-local Panel = require "ui.Panel"
+local Panel = require "ui.panel"
 local MInteractive = require "ui.mixins.interactive"
 
 local Button = class("Button", Panel)
@@ -23,6 +23,18 @@ function Button:initialize(posX, posY, pivotX, pivotY, width, height, spritePatc
     self.contentHeight = ch
 
     MInteractive.initialize(self)
+end
+
+function Button:drawText(cx, cy, cw, ch)
+    love.graphics.setFont(self.font)
+    local fontHeight = self.font:getHeight()
+    love.graphics.setColor(unpack(self.fontColor))
+    if self.interactive and self.isPressed then
+        love.graphics.printf(self.text, cx, cy + ch/2 - fontHeight/2 + 1, cw, self.align)
+    else
+        love.graphics.printf(self.text, cx, cy + ch/2 - fontHeight/2, cw, self.align)
+    end
+    love.graphics.setColor(255, 255, 255, 255)
 end
 
 return Button

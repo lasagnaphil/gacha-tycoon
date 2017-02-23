@@ -14,6 +14,7 @@ Monocle.new({
 Monocle.watch("FPS", function() return math.floor(1/love.timer.getDelta()) end)
 ]]
 
+require "lib.fun"()
 class = require "lib.middleclass"
 CScreen = require "lib.cscreen"
 local inspect = require "lib.inspect"
@@ -21,6 +22,7 @@ local flux = require "lib.flux"
 patchy = require "lib.patchy"
 assets = require("lib.cargo").init("assets")
 lui = require "ui.lui"
+require "utils.errors"
 local Stack = require "utils.stack"
 autolove = require "utils.autolove"
 
@@ -57,7 +59,7 @@ end
 
 function love.load()
     CScreen.init(160, 240, true)
-    lui:init({CScreen.getInfo()})
+    lui:init(CScreen.getInfo())
     gsm:push(states.Game:new())
     autolove:init(stateModules, states, reloadGame)
 end
@@ -98,14 +100,14 @@ function love.resize(width, height)
 end
 
 function love.mousepressed(x, y, button, istouch)
-    local tx, ty, fsv = CScreen.getInfo()
-    lui:pressed(x/fsv - tx, y/fsv - ty, button)
+    local screenInfo = CScreen.getInfo()
+    lui:pressed((x - screenInfo.tx)/screenInfo.fsv , (y - screenInfo.ty)/screenInfo.fsv, button)
     stateCall("mousepressed")
 end
 
 function love.mousereleased(x, y, button, istouch)
-    local tx, ty, fsv = CScreen.getInfo()
-    lui:released(x/fsv - tx, y/fsv - ty, button)
+    local screenInfo = CScreen.getInfo()
+    lui:released((x - screenInfo.tx)/screenInfo.fsv , (y - screenInfo.ty)/screenInfo.fsv, button)
     stateCall("mousereleased")
 end
 
@@ -114,9 +116,9 @@ function love.touchmoved(id, x, y, dx, dy, pressure)
 end
 
 function love.touchpressed(id, x, y, dx, dy, pressure)
-    -- body...
+    --love.mousepressed(x, y, 1)
 end
 
 function love.touchreleased(id, x, y, dx, dy, pressure)
-    -- body...
+    --love.mousereleased(x, y, 1)
 end

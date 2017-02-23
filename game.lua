@@ -1,7 +1,5 @@
 local Game = class("Game")
 
-local Inventory = require "inventory"
-
 function Game:initialize()
     self.name = "Game"
     self.moduleName = "game.lua"
@@ -20,7 +18,7 @@ function Game:initialize()
         swords = require "swords"
     }
 
-    self.inventory = Inventory:new()
+    self.inventory = require "inventory"
 
     for kind, items in pairs(self.items) do
         for _, item in ipairs(items) do
@@ -145,6 +143,9 @@ function Game:tryUpgradeItem()
     end
 end
 
+function Game:keepItem()
+end
+
 function Game:setupUI()
 
     --[[
@@ -255,6 +256,26 @@ function Game:setupUI()
         lui.Panel:new()
             :setSpritePatch(self.outlineImages.blue.pressed)
             :setText("Hello world!")
+            :setFont(self.defaultFont, Color.BLACK),
+
+        lui.Panel:new()
+            :setSpritePatch(self.outlineImages.blue.pressed)
+            :setText("Hello world!")
+            :setFont(self.defaultFont, Color.BLACK),
+
+        lui.Panel:new()
+            :setSpritePatch(self.outlineImages.blue.pressed)
+            :setText("Hello world!")
+            :setFont(self.defaultFont, Color.BLACK),
+
+        lui.Panel:new()
+            :setSpritePatch(self.outlineImages.blue.pressed)
+            :setText("Hello world!")
+            :setFont(self.defaultFont, Color.BLACK),
+
+        lui.Panel:new()
+            :setSpritePatch(self.outlineImages.blue.pressed)
+            :setText("Hello world!")
             :setFont(self.defaultFont, Color.BLACK)
     }
 
@@ -272,8 +293,32 @@ function Game:setupUI()
         :setFont(self.defaultFont, Color.BLACK)
         :setParent(self.ui.shopMenu)
 
-    self.ui.invMenu = lui.Panel:new(80, 120, 0.5, 0.5, 140, 160, self.outlineImages.green.pressed)
+    local invWidth, invHeight = 140, 160
+
+    self.ui.invMenu = lui.Panel:new(80, 120, 0.5, 0.5, invWidth, invHeight, self.outlineImages.green.pressed)
         :bindVar("isEnabled", function() return self.invMenuOpened end)
+
+    self.ui.inv = {}
+
+    self.ui.inv.itemList = lui.ScrollGrid:new(invWidth/2, 20, 0.5, 0, 120, 90, self.outlineImages.yellow.pressed)
+        :setParent(self.ui.invMenu)
+        :setEntrySize(10, 10)
+
+    self.ui.inv.itemList:addDefaultEntry(self.outlineImages.yellow.pressed, "H", self.minimalFont, Color.BLACK)
+    self.ui.inv.itemList:addDefaultEntry(self.outlineImages.yellow.pressed, "H", self.minimalFont, Color.BLACK)
+    self.ui.inv.itemList:addDefaultEntry(self.outlineImages.yellow.pressed, "H", self.minimalFont, Color.BLACK)
+    self.ui.inv.itemList:addDefaultEntry(self.outlineImages.yellow.pressed, "H", self.minimalFont, Color.BLACK)
+    self.ui.inv.itemList:addDefaultEntry(self.outlineImages.yellow.pressed, "H", self.minimalFont, Color.BLACK)
+
+    self.ui.inv.sellButton = lui.Button:new(invWidth-45, invHeight-5, 1, 1, 40, 20, self.outlineImages.blue)
+        :setText("Sell")
+        :setFont(self.defaultFont, Color.BLACK)
+        :setParent(self.ui.invMenu)
+
+    self.ui.inv.useButton = lui.Button:new(invWidth-5, invHeight-5, 1, 1, 40, 20, self.outlineImages.blue)
+        :setText("Use")
+        :setFont(self.defaultFont, Color.BLACK)
+        :setParent(self.ui.invMenu)
 
 end
 

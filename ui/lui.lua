@@ -7,6 +7,7 @@ lui.Panel = require "ui.panel"
 lui.Button = require "ui.button"
 lui.ProgressBar = require "ui.progress_bar"
 lui.ScrollList = require "ui.scroll_list"
+lui.ScrollGrid = require "ui.scroll_grid"
 
 -- all the frames
 lui.frames = {}
@@ -31,9 +32,13 @@ end
 
 function recursiveDraw(frame)
     frame:draw()
+    if frame.scissor then love.graphics.setScissor(unpack(frame.scissor)) end
     for _, child in ipairs(frame.children) do
-        recursiveDraw(child)
+        if child.isEnabled then
+            recursiveDraw(child)
+        end
     end
+    if frame.scissor then love.graphics.setScissor() end
 end
 function lui:draw()
     for _, frame in ipairs(self.frames) do
@@ -45,11 +50,11 @@ end
 
 function lui:update(dt)
     if love.mouse.isDown(1) then
-        local tx, ty, fsv = unpack(self.screenInfo)
+        local tx, ty, fsv = self.screenInfo.tx, self.screenInfo.ty, self.screenInfo.fsv
         local x, y = love.mouse.getX(), love.mouse.getY()
         for _, frame in ipairs(self.iframes) do
             if frame.isEnabled then
-                frame:whilePressInternal(x/fsv - tx, y/fsv - ty, 1)
+                frame:whilePressInternal((x - tx)/fsv, (y - ty)/fsv, 1)
             end
         end
     end

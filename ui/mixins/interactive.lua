@@ -1,6 +1,7 @@
 local Interactive = {
     initialize = function(self)
         self.interactive = true
+        self.isPressed = false
         self.onPressCallback = function() end
         self.onReleaseCallback = function() end
         lui:addInteractiveFrame(self)
@@ -20,12 +21,14 @@ local Interactive = {
     -- override those functions if necessary
     onPressInternal = function(self, x, y, button)
         if self:isPointerInBounds(x, y) then
-            self.sprite = self.spritePatches.pressed
+            self.isPressed = true
+            if self.spritePatches then self.sprite = self.spritePatches.pressed end
             self.onPressCallback()
         end
     end,
     onReleaseInternal = function(self, x, y, button)
-        self.sprite = self.spritePatches.normal
+        if self.spritePatches then self.sprite = self.spritePatches.normal end
+        self.isPressed = false
         if self:isPointerInBounds(x, y) then
             self.onReleaseCallback()
         end

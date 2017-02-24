@@ -252,6 +252,14 @@ function Game:setupUI()
         :setParent(self.ui.shopMenu)
         :setEntryHeight(30)
 
+    self.ui.shop.newItemPanel = function()
+        local panel = lui.Panel:new()
+            :setSpritePatch(self.outlineImages.blue.pressed)
+            :setText("Hello world!", "right")
+            :setFont(self.defaultFont, Color.BLACK)
+
+        return panel
+    end
     self.ui.shop.items = {
         lui.Panel:new()
             :setSpritePatch(self.outlineImages.blue.pressed)
@@ -300,15 +308,41 @@ function Game:setupUI()
 
     self.ui.inv = {}
 
+    self.ui.inv.titleText = lui.Panel:new(invWidth/2, 5, 0.5, 0, 40, 15)
+        :setText("Inventory")
+        :setFont(self.defaultFont, Color.BLACK)
+        :setParent(self.ui.invMenu)
+
     self.ui.inv.itemList = lui.ScrollGrid:new(invWidth/2, 20, 0.5, 0, 120, 90, self.outlineImages.yellow.pressed)
         :setParent(self.ui.invMenu)
-        :setEntrySize(10, 10)
+        :setEntrySize(32, 32)
 
     self.ui.inv.itemList:addDefaultEntry(self.outlineImages.yellow.pressed, "H", self.minimalFont, Color.BLACK)
-    self.ui.inv.itemList:addDefaultEntry(self.outlineImages.yellow.pressed, "H", self.minimalFont, Color.BLACK)
-    self.ui.inv.itemList:addDefaultEntry(self.outlineImages.yellow.pressed, "H", self.minimalFont, Color.BLACK)
-    self.ui.inv.itemList:addDefaultEntry(self.outlineImages.yellow.pressed, "H", self.minimalFont, Color.BLACK)
-    self.ui.inv.itemList:addDefaultEntry(self.outlineImages.yellow.pressed, "H", self.minimalFont, Color.BLACK)
+                        :addDefaultEntry(self.outlineImages.yellow.pressed, "H", self.minimalFont, Color.BLACK)
+                        :addDefaultEntry(self.outlineImages.yellow.pressed, "H", self.minimalFont, Color.BLACK)
+                        :addDefaultEntry(self.outlineImages.yellow.pressed, "H", self.minimalFont, Color.BLACK)
+                        :addDefaultEntry(self.outlineImages.yellow.pressed, "H", self.minimalFont, Color.BLACK)
+                        :addDefaultEntry(self.outlineImages.yellow.pressed, "H", self.minimalFont, Color.BLACK)
+                        :addDefaultEntry(self.outlineImages.yellow.pressed, "H", self.minimalFont, Color.BLACK)
+                        :addDefaultEntry(self.outlineImages.yellow.pressed, "H", self.minimalFont, Color.BLACK)
+                        :addDefaultEntry(self.outlineImages.yellow.pressed, "H", self.minimalFont, Color.BLACK)
+                        :addDefaultEntry(self.outlineImages.yellow.pressed, "H", self.minimalFont, Color.BLACK)
+                        :addDefaultEntry(self.outlineImages.yellow.pressed, "H", self.minimalFont, Color.BLACK)
+                        :addDefaultEntry(self.outlineImages.yellow.pressed, "H", self.minimalFont, Color.BLACK)
+                        :addDefaultEntry(self.outlineImages.yellow.pressed, "H", self.minimalFont, Color.BLACK)
+                        :addDefaultEntry(self.outlineImages.yellow.pressed, "H", self.minimalFont, Color.BLACK)
+                        :addDefaultEntry(self.outlineImages.yellow.pressed, "H", self.minimalFont, Color.BLACK)
+                        :addDefaultEntry(self.outlineImages.yellow.pressed, "H", self.minimalFont, Color.BLACK)
+                        :addDefaultEntry(self.outlineImages.yellow.pressed, "H", self.minimalFont, Color.BLACK)
+                        :addDefaultEntry(self.outlineImages.yellow.pressed, "H", self.minimalFont, Color.BLACK)
+                        :addDefaultEntry(self.outlineImages.yellow.pressed, "H", self.minimalFont, Color.BLACK)
+                        :addDefaultEntry(self.outlineImages.yellow.pressed, "H", self.minimalFont, Color.BLACK)
+                        :addDefaultEntry(self.outlineImages.yellow.pressed, "H", self.minimalFont, Color.BLACK)
+
+    self.ui.inv.description = lui.Panel:new(invWidth/2, invHeight-24, 0.5, 1, invWidth*0.8, invHeight*0.2)
+        :setText("do something that is totally crazy")
+        :setFont(self.minimalFont, Color.BLACK)
+        :setParent(self.ui.invMenu)
 
     self.ui.inv.sellButton = lui.Button:new(invWidth-45, invHeight-5, 1, 1, 40, 20, self.outlineImages.blue)
         :setText("Sell")

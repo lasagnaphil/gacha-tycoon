@@ -8,13 +8,11 @@ Panel:include(MText)
 function Panel:initialize(posX, posY, pivotX, pivotY, width, height, spritePatch)
     Frame.initialize(self, posX, posY, pivotX, pivotY, width, height)
     if spritePatch ~= nil then
-        self.sprite = spritePatch
-
-        local cx, cy, cw, ch = spritePatch:get_content_box(self.absX, self.absY, self.width, self.height)
-        self.contentX = cx
-        self.contentY = cy
-        self.contentWidth = cw
-        self.contentHeight = ch
+        if spritePatch.get_content_box then
+            self:setSpritePatch(spritePatch)
+        else
+            self:setSprite(spritePatch)
+        end
     else
         self.contentX = absX
         self.contentY = absY
@@ -26,23 +24,44 @@ function Panel:initialize(posX, posY, pivotX, pivotY, width, height, spritePatch
     self.font = font
     self.fontColor = {255, 255, 255, 255}
     self.align = "center"
+    self.isNinePatch = false
 end
 
-function Panel:setSpritePatch(spritePatch)
-    self.sprite = spritePatch
-
-    local cx, cy, cw, ch = spritePatch:get_content_box(self.absX, self.absY, self.width, self.height)
-    self.contentX = cx
-    self.contentY = cy
-    self.contentWidth = cw
-    self.contentHeight = ch
+function Panel:setSprite(sprite)
+    self.isNinePatch = false
+    self.sprite = sprite
+    self:updateSpritePos()
 
     return self
 end
 
+function Panel:setSpritePatch(spritePatch)
+    self.isNinePatch = true
+    self.sprite = spritePatch
+    self.spritePatch = spritePatch
+    self:updateSpritePos()
+
+    return self
+end
+
+function Panel:updateSpritePos()
+    if self.isNinePatch then
+        local cx, cy, cw, ch = self.spritePatch:get_content_box(self.absX, self.absY, self.width, self.height)
+        self.contentX = cx
+        self.contentY = cy
+        self.contentWidth = cw
+        self.contentHeight = ch
+    else
+        self.contentX = self.absX
+        self.contentY = self.absY
+        self.contentWidth = self.width
+        self.contentHeight = self.height
+    end
+end
+
 function Panel:draw()
     local cx, cy, cw, ch
-    if self.sprite ~= nil then
+    if self.sprite then
         cx, cy, cw, ch = self.sprite:draw(self.absX, self.absY, self.width, self.height)
     else
         cx, cy, cw, ch = self.absX, self.absY, self.width, self.height

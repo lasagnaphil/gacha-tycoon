@@ -35,6 +35,5 @@ local Interactive = {
     end,
     whilePressInternal = function(self, x, y, button)
     end
-
 }
 return Interactive

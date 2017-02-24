@@ -1,26 +1,34 @@
 local Panel = require "ui.panel"
 
 local scrollable = {
-    scroll = function(self, height)
-        override_error("Scrollable", "scroll")
+    initialize = function(self)
+        self.scrollPos = 0
+        self.deltaScroll = 0
+        self.scrollFriction = 1
     end,
     onPressInternal = function(self, x, y, button)
-    end,
-    onReleaseInternal = function(self, x, y, button)
-        self.lastClickPos = nil
-    end,
-    whilePressInternal = function(self, x, y, button)
         if self:isPointerInBounds(x, y) then
-            if self.lastClickPos ~= nil then
-                local deltaY = y - self.lastClickPos
-                self:scroll(deltaY)
-            end
             self.lastClickPos = y
         end
     end,
+    onReleaseInternal = function(self, x, y, button)
+        self.lastClickPos = nil
+        self:afterScroll()
+    end,
+    whilePressInternal = function(self, x, y, button)
+        if self.lastClickPos then
+            local deltaY = y - self.lastClickPos
+            self:scroll(deltaY)
+            self.lastClickPos = y
+        end
+    end,
+    getLeftoverSpace = function(self)
+        override_error("Scrollable", "getLeftoverSpace")
+    end,
     scroll = function(self, height)
+        self.deltaScroll = height
         local numEntries = #self.entries
-        local leftoverSpace = numEntries * self.entryHeight - self.height
+        local leftoverSpace = self:getLeftoverSpace()
         self.scrollPos = self.scrollPos - height
         if self.scrollPos < -self.padding then
             self.scrollPos = -self.padding
@@ -31,6 +39,16 @@ local scrollable = {
             end
         end
         self:updateEntryPos()
+    end,
+    afterScroll = function(self)
+        local threshold = 1
+        if self.deltaScroll > threshold then
+            self:scroll(self.deltaScroll - self.scrollFriction)
+        elseif self.deltaScroll < - threshold then
+            self:scroll(self.deltaScroll + self.scrollFriction)
+        else
+            self.deltaScroll = 0
+        end
     end,
     updateEntryPos = function(self)
         override_error("Scrollable", "updateEntryPos")

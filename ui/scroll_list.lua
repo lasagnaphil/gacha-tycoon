@@ -9,13 +9,12 @@ ScrollList:include(MScrollable)
 function ScrollList:initialize(posX, posY, pivotX, pivotY, width, height, spritePatch)
     Panel.initialize(self, posX, posY, pivotX, pivotY, width, height, spritePatch)
     MInteractive.initialize(self)
+    MScrollable.initialize(self)
 
     self.entries = {}
     self.entryHeight = 20
     self.scrollPos = 0
     self.padding = 3
-    self.lastClickPos = nil
-
 end
 
 function ScrollList:setEntryHeight(height)
@@ -43,7 +42,7 @@ end
 function ScrollList:addDefaultEntry(spritePatch, text, font, fontColor)
     local entry = Panel:new(self.padding, #self.entries * self.entryHeight + self.padding,
                             0, 0,
-                            self.width - self.padding * 2, self.entryHeight - self.padding,
+                            self.entryWidth, self.entryHeight,
                             spritePatch)
         :setText(text)
         :setFont(font, fontColor)
@@ -55,6 +54,9 @@ function ScrollList:addDefaultEntry(spritePatch, text, font, fontColor)
     return self
 end
 
+function ScrollList:getLeftoverSpace()
+    return #self.entries * self.entryHeight - self.height
+end
 
 function ScrollList:updateEntryPos()
     for i, entry in ipairs(self.entries) do

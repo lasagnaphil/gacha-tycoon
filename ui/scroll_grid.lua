@@ -1,20 +1,23 @@
 local Panel = require "ui.panel"
 local ScrollGrid = class("ScrollGrid", Panel)
 local MInteractive = require "ui.mixins.interactive"
+local MScrollable = require "ui.mixins.scrollable"
+
 ScrollGrid:include(MInteractive)
+ScrollGrid:include(MScrollable)
 
 function ScrollGrid:initialize(posX, posY, pivotX, pivotY, width, height, spritePatch)
     Panel.initialize(self, posX, posY, pivotX, pivotY, width, height, spritePatch)
     MInteractive.initialize(self)
+    MScrollable.initialize(self)
 
     self.entries = {}
     self.entryWidth = 20
     self.entryHeight = 20
-    self.columns = 6
+    self.columns = 3
     self.rows = 4
     self.scrollPos = 0
-    self.padding = 3
-    self.lastClickPos = nil
+    self.padding = 2
 
 end
 
@@ -24,12 +27,10 @@ function ScrollGrid:setEntrySize(width, height)
     return self
 end
 
-function ScrollGrid:addDefaultEntry(spritePatch, text, font, fontColor)
-    local x = #self.entries % self.columns
-    local y = #self.entries / self.columns
-    local entry = Panel:new(self.padding + x * self.entryWidth, self.padding + y * self.entryHeight,
-                            0, 0,
-                            self.entryWidth - self.padding, self.entryHeight - self.padding)
+function ScrollGrid:addEntry(entry)
+    entry:setPos(self.padding + x * (self.entryWidth + self.padding), self.padding + y * (self.entryHeight + self.padding))
+         :setPivot(0, 0)
+         :setSize(self.entryWidth, self.entryHeight)
 
     self.entries[#self.entries + 1] = entry
 
@@ -38,10 +39,32 @@ function ScrollGrid:addDefaultEntry(spritePatch, text, font, fontColor)
     return self
 end
 
+function ScrollGrid:addDefaultEntry(spritePatch, text, font, fontColor)
+    local x = #self.entries % self.columns
+    local y = math.floor(#self.entries / self.columns)
+    local entry = Panel:new(x * self.entryWidth + self.padding, y * self.entryHeight + self.padding,
+                            0, 0,
+                            self.entryWidth, self.entryHeight,
+                            spritePatch)
+                       :setText(text)
+                       :setFont(font, fontColor)
+
+    self.entries[#self.entries + 1] = entry
+
+    entry:setParent(self)
+
+    return self
+end
+
+function ScrollGrid:getLeftoverSpace()
+    return math.floor(#self.entries / self.columns) * self.entryHeight - self.height
+end
+
 function ScrollGrid:updateEntryPos()
     for i, entry in ipairs(self.entries) do
-        local h = i % self.columns
-        entry:setPos(entry.posX, entry.posY + self.scrollPos + (h-1) * self.entryHeight)
+        local w = (i - 1) % self.columns
+        local h = math.floor((i - 1)/self.columns)
+        entry:setPos(self.padding + w * self.entryWidth, -self.scrollPos + h * self.entryHeight)
     end
 end
 

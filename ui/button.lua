@@ -16,11 +16,13 @@ function Button:initialize(posX, posY, pivotX, pivotY, width, height, spritePatc
     ]]
     self.spritePatches = spritePatches
 
+    --[[
     local cx, cy, cw, ch = self.sprite:get_content_box(self.absX, self.absY, self.width, self.height)
     self.contentX = cx
     self.contentY = cy
     self.contentWidth = cw
     self.contentHeight = ch
+    ]]
 
     MInteractive.initialize(self)
 end

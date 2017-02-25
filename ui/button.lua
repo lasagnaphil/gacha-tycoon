@@ -16,15 +16,22 @@ function Button:initialize(posX, posY, pivotX, pivotY, width, height, spritePatc
     ]]
     self.spritePatches = spritePatches
 
-    --[[
-    local cx, cy, cw, ch = self.sprite:get_content_box(self.absX, self.absY, self.width, self.height)
-    self.contentX = cx
-    self.contentY = cy
-    self.contentWidth = cw
-    self.contentHeight = ch
-    ]]
-
     MInteractive.initialize(self)
+end
+
+function Button:setSpritePatches(spritePatches)
+    self.spritePatches = spritePatches
+    return self
+end
+
+function Button:onPressInternal(x, y, button)
+    MInteractive.onPressInternal(self, x, y, button)
+    self.sprite = self.isPressed and self.spritePatches.pressed or self.spritePatches.normal
+end
+
+function Button:onReleaseInternal(x, y, button)
+    MInteractive.onReleaseInternal(self, x, y, button)
+    self.sprite = self.isPressed and self.spritePatches.pressed or self.spritePatches.normal
 end
 
 function Button:drawText(cx, cy, cw, ch)

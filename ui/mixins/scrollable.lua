@@ -9,11 +9,13 @@ local scrollable = {
     onPressInternal = function(self, x, y, button)
         if self:isPointerInBounds(x, y) then
             self.lastClickPos = y
+            return true
         end
+        return false
     end,
     onReleaseInternal = function(self, x, y, button)
         self.lastClickPos = nil
-        self:afterScroll()
+        --self:afterScroll()
     end,
     whilePressInternal = function(self, x, y, button)
         if self.lastClickPos then
@@ -33,9 +35,9 @@ local scrollable = {
         if self.scrollPos < -self.padding then
             self.scrollPos = -self.padding
         else
-            if leftoverSpace < 0 then self.scrollPos = 0
-            elseif self.scrollPos > leftoverSpace then
-                self.scrollPos = leftoverSpace
+            if leftoverSpace < 0 then self.scrollPos = -self.padding
+            elseif self.scrollPos > leftoverSpace + self.padding then
+                self.scrollPos = leftoverSpace + self.padding
             end
         end
         self:updateEntryPos()

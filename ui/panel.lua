@@ -1,4 +1,3 @@
-local class = require "lib.middleclass"
 local Frame = require "ui.frame"
 local MText = require "ui.mixins.text"
 
@@ -60,18 +59,12 @@ function Panel:updateSpritePos()
 end
 
 function Panel:draw()
-    local cx, cy, cw, ch
     if self.sprite then
-        cx, cy, cw, ch = self.sprite:draw(self.absX, self.absY, self.width, self.height)
-    else
-        cx, cy, cw, ch = self.absX, self.absY, self.width, self.height
+        self.sprite:draw(self.absX, self.absY, self.width, self.height)
     end
-    self.contentX = cx
-    self.contentY = cy
-    self.contentWidth = cw
-    self.contentHeight = ch
+    self:updateSpritePos()
     if self.text and self.text ~= "" then
-        self:drawText(cx, cy, cw, ch)
+        self:drawText(self.contentX, self.contentY, self.contentWidth, self.contentHeight)
     end
 end
 

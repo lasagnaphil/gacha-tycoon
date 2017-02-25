@@ -1,3 +1,4 @@
+--require "lib.lovedebug"
 
 love.graphics.setDefaultFilter('nearest', 'nearest')
 
@@ -17,7 +18,7 @@ Monocle.watch("FPS", function() return math.floor(1/love.timer.getDelta()) end)
 require "lib.fun"()
 class = require "lib.middleclass"
 CScreen = require "lib.cscreen"
-local inspect = require "lib.inspect"
+inspect = require "lib.inspect"
 local flux = require "lib.flux"
 patchy = require "lib.patchy"
 assets = require("lib.cargo").init("assets")
@@ -61,7 +62,7 @@ function love.load()
     CScreen.init(160, 240, true)
     lui:init(CScreen.getInfo())
     gsm:push(states.Game:new())
-    autolove:init(stateModules, states, reloadGame)
+    --autolove:init(stateModules, states, reloadGame)
 end
 
 function love.update(dt)
@@ -69,7 +70,7 @@ function love.update(dt)
     flux.update(dt)
     stateCall("update")
     --Monocle.update()
-    autolove:update(dt)
+    --autolove:update(dt)
 end
 
 function love.draw()

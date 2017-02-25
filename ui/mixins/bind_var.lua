@@ -1,15 +1,18 @@
 local BindVar = {
     initialize = function(self)
         self.bindings = {}
-        self.setters = {}
     end,
-    bindVar = function(self, varName, getter)
-        self.bindings[varName] = getter
+    bindVar = function(self, varName, getter, setter)
+        self.bindings[varName] = {getter = getter, setter = setter}
         return self
     end,
     updateBindings = function(self)
-        for name, getter in pairs(self.bindings) do
-            self[name] = self.bindings[name]()
+        for name, binding in pairs(self.bindings) do
+            if binding.setter then
+                binding.setter(self, binding.getter())
+            else
+                self[name] = binding.getter()
+            end
         end
     end
 }

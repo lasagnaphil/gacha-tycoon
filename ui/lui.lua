@@ -8,6 +8,7 @@ lui.Button = require "ui.button"
 lui.ProgressBar = require "ui.progress_bar"
 lui.ScrollList = require "ui.scroll_list"
 lui.ScrollGrid = require "ui.scroll_grid"
+lui.Image = require "ui.image"
 
 -- all the frames
 lui.frames = {}
@@ -63,16 +64,43 @@ function lui:update(dt)
     end
 end
 
+--[[
+function recursivePressed(frame, x, y, button)
+    for i = #frame.children, 1, -1 do
+        local frame = frame.children[i]
+        recursivePressed(child, x, y, button)
+    end
+    if frame.isEnabled then
+        local pressed = frame:onPressInternal(x, y, button)
+        if not frame.toggleable and pressed then return end
+    end
+end
+
 function lui:pressed(x, y, button)
-    for _, frame in ipairs(self.iframes) do
+    for i = #self.iframes, 1, -1 do
+        local frame = self.iframes[i]
+        if frame.parent == nil and frame.isEnabled then
+            recursivePressed(frame, x, y, button)
+        end
+    end
+end
+]]
+
+function lui:pressed(x, y, button)
+    for i = #self.iframes, 1, -1 do
+        local frame = self.iframes[i]
         if frame.isEnabled then
-            frame:onPressInternal(x, y, button)
+            local pressed = frame:onPressInternal(x, y, button)
+            if pressed then
+                return
+            end
         end
     end
 end
 
 function lui:released(x, y, button)
-    for _, frame in ipairs(self.iframes) do
+    for i = #self.iframes, 1, -1 do
+        local frame = self.iframes[i]
         if frame.isEnabled then
             frame:onReleaseInternal(x, y, button)
         end

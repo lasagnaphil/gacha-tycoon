@@ -11,11 +11,13 @@ function Game:initialize()
     self.shopMenuOpened = false
     self.upgradeFailed = false
 
+    self.noImgSprite = love.graphics.newImage("assets/img/no-image.png")
     -- current type of item
     self.curItemType = "swords"
 
     self.items = {
-        swords = require "swords"
+        swords = require "swords",
+        shopItems = require "shop_items"
     }
 
     self.inventory = require "inventory"
@@ -26,7 +28,7 @@ function Game:initialize()
                 local currentItemPath = "assets/img/" .. items.path .. "/" .. item.img
                 item.loadedImg = love.graphics.newImage(currentItemPath)
             else
-                item.loadedImg = love.graphics.newImage("assets/img/no-image.png")
+                item.loadedImg = self.noImgSprite
             end
         end
     end
@@ -98,6 +100,10 @@ function Game:initialize()
     --panel = lui:newPanel(80, 120, 0.5, 0.5, 80, 120, panelImage)
 
     ]]
+
+    self.shopMenuOpened = false
+    self.invMenuOpened = false
+    self.lowerButtonsEnabled = true
     self:setupUI()
 end
 
@@ -126,11 +132,13 @@ end
 function Game:toggleShopMenu()
     self.invMenuOpened = false
     self.shopMenuOpened = not self.shopMenuOpened
+    self.lowerButtonsEnabled = not self.shopMenuOpened
 end
 
 function Game:toggleInvMenu()
     self.shopMenuOpened = false
     self.invMenuOpened = not self.invMenuOpened
+    self.lowerButtonsEnabled = not self.invMenuOpened
 end
 
 function Game:tryUpgradeItem()
@@ -208,7 +216,7 @@ function Game:setupUI()
         :setFont(self.defaultFont, {255, 255, 255, 255})
         :onPress(function() self:sellItem() end)
         :bindVar("isEnabled", function()
-            return not self.upgradeFailed
+            return not self.upgradeFailed and self.lowerButtonsEnabled
         end)
 
     self.ui.keepButton = lui.Button:new(80, 230, 0.5, 1, 45, 20, self.coloredImages.green)
@@ -216,7 +224,7 @@ function Game:setupUI()
         :setFont(self.defaultFont, {255, 255, 255, 255})
         :onPress(function() self:keepItem() end)
         :bindVar("isEnabled", function()
-            return not self.upgradeFailed
+            return not self.upgradeFailed and self.lowerButtonsEnabled
         end)
 
     self.ui.upgradeButton = lui.Button:new(150, 230, 1, 1, 45, 20, self.coloredImages.blue)
@@ -234,12 +242,12 @@ function Game:setupUI()
             if self.upgradeFailed then return "Retry?"
             else return "Upgrade" end
         end)
+        :bindVar("isEnabled", function() return self.lowerButtonsEnabled end)
 
-    local shopWidth, shopHeight = 140, 160
-    self.ui.shopMenu = lui.Panel:new(80, 120, 0.5, 0.5, shopWidth, shopHeight, self.outlineImages.yellow.pressed)
-        :bindVar("isEnabled", function()
-            return self.shopMenuOpened
-        end)
+    local shopWidth, shopHeight = 140, 190
+    self.ui.shopMenu = lui.Panel:new(80, 135, 0.5, 0.5, shopWidth, shopHeight, self.outlineImages.yellow.pressed)
+        :bindVar("isEnabled", function() return self.shopMenuOpened end, lui.Frame.setEnable)
+        :setEnable(false)
 
     self.ui.shop = {}
 
@@ -248,63 +256,76 @@ function Game:setupUI()
         :setFont(self.defaultFont, Color.BLACK)
         :setParent(self.ui.shopMenu)
 
-    self.ui.shop.itemList = lui.ScrollList:new(shopWidth/2, 20, 0.5, 0, 120, 90, self.outlineImages.yellow.pressed)
+    self.ui.shop.itemList = lui.ScrollList:new(shopWidth/2, 20, 0.5, 0, 120, 120, self.outlineImages.yellow.pressed)
         :setParent(self.ui.shopMenu)
         :setEntryHeight(30)
+        :setEnable(false)
 
-    self.ui.shop.newItemPanel = function()
-        local panel = lui.Panel:new()
-            :setSpritePatch(self.outlineImages.blue.pressed)
-            :setText("Hello world!", "right")
+    self.ui.shop.selectedItemPanel = nil
+    self.ui.shop.selectedItem = nil
+    self.ui.shop.newItemPanel = function(item)
+        local panel = lui.Button:new(0, 0, 0, 0, 100, 100, self.outlineImages.blue)
+            :setText(item.name .. "\t", "right")
             :setFont(self.defaultFont, Color.BLACK)
+
+        panel:onPress(function()
+            panel:setSpritePatches(self.outlineImages.red)
+            self.ui.shop.selectedItemPanel = panel
+            self.ui.shop.selectedItem = item
+            for _, itemPanel in ipairs(self.ui.shop.items) do
+                if itemPanel ~= panel then
+                    itemPanel:setSpritePatches(self.outlineImages.blue)
+                end
+            end
+        end)
+
+        local icon = lui.Image:new(15, 15, 0.5, 0.5, 16, 16, item.loadedImg or self.noImgSprite)
+            :setParent(panel)
+
+        panel.item = item
 
         return panel
     end
-    self.ui.shop.items = {
-        lui.Panel:new()
-            :setSpritePatch(self.outlineImages.blue.pressed)
-            :setText("Hello world!")
-            :setFont(self.defaultFont, Color.BLACK),
 
-        lui.Panel:new()
-            :setSpritePatch(self.outlineImages.blue.pressed)
-            :setText("Hello world!")
-            :setFont(self.defaultFont, Color.BLACK),
-
-        lui.Panel:new()
-            :setSpritePatch(self.outlineImages.blue.pressed)
-            :setText("Hello world!")
-            :setFont(self.defaultFont, Color.BLACK),
-
-        lui.Panel:new()
-            :setSpritePatch(self.outlineImages.blue.pressed)
-            :setText("Hello world!")
-            :setFont(self.defaultFont, Color.BLACK),
-
-        lui.Panel:new()
-            :setSpritePatch(self.outlineImages.blue.pressed)
-            :setText("Hello world!")
-            :setFont(self.defaultFont, Color.BLACK)
-    }
-
-    for _, item in ipairs(self.ui.shop.items) do
-        self.ui.shop.itemList:addEntry(item)
+    self.ui.shop.updateItems = function()
+        self.ui.shop.items = iter(self.items.shopItems)
+            :map(function(item)
+                local panel = self.ui.shop.newItemPanel(item)
+                self.ui.shop.itemList:addEntry(panel)
+                return panel
+            end)
+            :totable()
     end
+    self.ui.shop.updateItems()
 
+    self.ui.shop.descriptionText = "<description>"
     self.ui.shop.description = lui.Panel:new(shopWidth/2, shopHeight-24, 0.5, 1, shopWidth*0.8, shopHeight*0.2)
-        :setText("do something that is totally crazy")
+        :setText(self.ui.shop.descriptionText)
         :setFont(self.minimalFont, Color.BLACK)
         :setParent(self.ui.shopMenu)
+        :bindVar("text", function() return self.ui.shop.descriptionText end)
+
+    self.ui.shop.description = lui.Panel:new(10, shopHeight-9, 0, 1, shopWidth*0.3, 10)
+        :setText("cost: 1000", "left")
+        :setFont(self.minimalFont, Color.BLACK)
+        :setParent(self.ui.shopMenu)
+        :bindVar("text", function()
+            if self.ui.shop.selectedItem == nil then return "" end
+            return "cost: " .. (self.ui.shop.selectedItem.cost or "none")
+        end)
 
     self.ui.shop.buyButton = lui.Button:new(shopWidth-5, shopHeight-5, 1, 1, 40, 20, self.outlineImages.blue)
         :setText("Buy")
         :setFont(self.defaultFont, Color.BLACK)
         :setParent(self.ui.shopMenu)
+        :onPress(function()
+        end)
 
     local invWidth, invHeight = 140, 160
 
     self.ui.invMenu = lui.Panel:new(80, 120, 0.5, 0.5, invWidth, invHeight, self.outlineImages.green.pressed)
-        :bindVar("isEnabled", function() return self.invMenuOpened end)
+        :bindVar("isEnabled", function() return self.invMenuOpened end, lui.Frame.setEnable)
+        :setEnable(false)
 
     self.ui.inv = {}
 
@@ -316,6 +337,7 @@ function Game:setupUI()
     self.ui.inv.itemList = lui.ScrollGrid:new(invWidth/2, 20, 0.5, 0, 120, 90, self.outlineImages.yellow.pressed)
         :setParent(self.ui.invMenu)
         :setEntrySize(32, 32)
+        :setEnable(false)
 
     self.ui.inv.itemList:addDefaultEntry(self.outlineImages.yellow.pressed, "H", self.minimalFont, Color.BLACK)
                         :addDefaultEntry(self.outlineImages.yellow.pressed, "H", self.minimalFont, Color.BLACK)

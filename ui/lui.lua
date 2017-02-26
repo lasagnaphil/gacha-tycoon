@@ -9,6 +9,7 @@ lui.ProgressBar = require "ui.progress_bar"
 lui.ScrollList = require "ui.scroll_list"
 lui.ScrollGrid = require "ui.scroll_grid"
 lui.Image = require "ui.image"
+lui.ClickableImage = require "ui.clickable_image"
 
 -- all the frames
 lui.frames = {}

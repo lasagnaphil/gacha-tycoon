@@ -25,8 +25,13 @@ end
 
 function Frame:setEnable(value)
     self.isEnabled = value
+    return self
+end
+
+function Frame:setEnableIncludingChildren(value)
+    self.isEnabled = value
     for _, child in ipairs(self.children) do
-        child:setEnable(value)
+       child:setEnable(value)
     end
     return self
 end

@@ -7,9 +7,10 @@ require "utils.copy"
 class = require "lib.middleclass"
 CScreen = require "lib.cscreen"
 inspect = require "lib.inspect"
-local flux = require "lib.flux"
+flux = require "lib.flux"
 patchy = require "lib.patchy"
 assets = require("lib.cargo").init("assets")
+anim8 = require "lib.anim8"
 lui = require "ui.lui"
 require "utils.errors"
 local Stack = require "utils.stack"
@@ -20,49 +21,50 @@ lui:setRootSize(160, 240)
 local states = {
     Game = require "game",
     Title = require "title",
+    Gacha = require "gacha"
 }
 
 local stateModules = {
     Game = "game.lua",
     Title = "title.lua",
+    Gacha = "gacha.lua"
 }
 
 local lastStateSave = {}
 local lastHotModified
 
 local gsm = Stack:new()
+gsm.states = states
 
 function stateCall(funcName, ...)
-    for _, state in ipairs(gsm.elems) do
-        if state[funcName] then state[funcName](state, ...) end
-    end
+    local state = gsm:peek()
+    if state[funcName] then state[funcName](state, ...) end
 end
 
 function reloadGame()
     local currentStateName = gsm:peek().name
     gsm:pop()
     lui:clear()
-    gsm:push(states[currentStateName]:new())
+    gsm:push(states[currentStateName]:new(gsm))
 end
 
 
 function love.load()
     CScreen.init(160, 240, true)
     lui:init(CScreen.getInfo())
-    gsm:push(states.Game:new())
+    gsm:push(states.Game:new(gsm))
     --autolove:init(stateModules, states, reloadGame)
 end
 
 function love.update(dt)
     lui:update(dt)
     flux.update(dt)
-    stateCall("update")
+    stateCall("update", dt)
     --Monocle.update()
     --autolove:update(dt)
 end
 
 function love.draw()
-    love.graphics.setBackgroundColor(255, 239, 138, 1)
     CScreen.apply()
     --frame:drawDebug()
     stateCall("draw")
@@ -77,7 +79,7 @@ function love.textinput(t)
 end
 
 function love.keypressed(key, scancode, isrepeat)
-    stateCall("keypressed")
+    stateCall("keypressed", key, scancode, isrepeta)
     if key == "r" then
         reloadGame()
     end
@@ -85,19 +87,23 @@ function love.keypressed(key, scancode, isrepeat)
 end
 function love.resize(width, height)
     CScreen.update(width, height)
-    stateCall("resize")
+    stateCall("resize", width, height)
 end
 
 function love.mousepressed(x, y, button, istouch)
     local screenInfo = CScreen.getInfo()
-    lui:pressed((x - screenInfo.tx)/screenInfo.fsv , (y - screenInfo.ty)/screenInfo.fsv, button)
-    stateCall("mousepressed")
+    local ax = (x - screenInfo.tx)/screenInfo.fsv
+    local ay = (y - screenInfo.ty)/screenInfo.fsv
+    lui:pressed(ax, ay, button)
+    stateCall("mousepressed", ax, ay, button, istouch)
 end
 
 function love.mousereleased(x, y, button, istouch)
     local screenInfo = CScreen.getInfo()
-    lui:released((x - screenInfo.tx)/screenInfo.fsv , (y - screenInfo.ty)/screenInfo.fsv, button)
-    stateCall("mousereleased")
+    local ax = (x - screenInfo.tx)/screenInfo.fsv
+    local ay = (y - screenInfo.ty)/screenInfo.fsv
+    lui:released(ax, ay, button)
+    stateCall("mousereleased", ax, ay, button, istouch)
 end
 
 function love.touchmoved(id, x, y, dx, dy, pressure)

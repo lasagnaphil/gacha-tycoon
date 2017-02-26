@@ -1,17 +1,25 @@
 local Game = class("Game")
 
-function Game:initialize()
+function Game:initialize(gsm)
+    self.gsm = gsm
+
     self.name = "Game"
     self.moduleName = "game.lua"
 
     self.gameMoney = 300000
-    self.realMoney = 10000
+    self.cash = 10000
 
     self.ui = {}
-    self.shopMenuOpened = false
     self.upgradeFailed = false
 
-    self.noImgSprite = love.graphics.newImage("assets/img/no-image.png")
+    -- sprites used in the game
+
+    self.sprites = {
+        noImg = love.graphics.newImage("assets/img/no-image.png"),
+        gachaPod = love.graphics.newImage("assets/img/gacha1.png"),
+        work = love.graphics.newImage("assets/img/worker.png"),
+    }
+
     -- current type of item
     self.curItemType = "swords"
 
@@ -38,7 +46,7 @@ function Game:initialize()
                 local currentItemPath = "assets/img/" .. items.path .. "/" .. item.img
                 item.loadedImg = love.graphics.newImage(currentItemPath)
             else
-                item.loadedImg = self.noImgSprite
+                item.loadedImg = self.sprites.noImg
             end
         end
     end
@@ -113,8 +121,11 @@ function Game:initialize()
 
     self.shopMenuOpened = false
     self.invMenuOpened = false
+    self.gachaSceneOpened = false
+    self.workSceneOpened = false
     self.lowerButtonsEnabled = true
     self:setupUI()
+    self:setupGachaUI()
 end
 
 function Game:setItem(arg)
@@ -137,10 +148,22 @@ function Game:addMoney(money)
     self.gameMoney = self.gameMoney + money
 end
 
+function Game:addCash(cash)
+    self.cash = self.cash + cash
+end
+
 function Game:useMoney(money)
     if self.gameMoney < money then return false
     else
         self.gameMoney = self.gameMoney - money
+        return true
+    end
+end
+
+function Game:useCash(cash)
+    if self.cash < cash then return false
+    else
+        self.cash = self.cash - cash
         return true
     end
 end
@@ -172,6 +195,7 @@ function Game:toggleShopMenu()
     if self.shopMenuOpened then
         self.ui.shop.updateItems()
     end
+    self.ui.rootFrame:setEnable(true)
 end
 
 function Game:toggleInvMenu()
@@ -181,6 +205,34 @@ function Game:toggleInvMenu()
     if self.invMenuOpened then
         self.ui.inv.updateItems()
     end
+    self.ui.rootFrame:setEnable(true)
+end
+
+function Game:openGachaScene()
+    self.shopMenuOpened = false
+    self.invMenuOpened = false
+    self.gachaSceneOpened = true
+    self.ui.rootFrame:setEnable(false)
+end
+
+function Game:closeGachaScene()
+    self.gachaSceneOpened = false
+    self.ui.rootFrame:setEnable(true)
+end
+
+function Game:openWorkScene()
+    self.shopMenuOpened = false
+    self.invMenuOpened = false
+    self.workSceneOpened = true
+    self.ui.rootFrame:setEnable(false)
+    self.ui.outOfMoneyPanel:setEnable(false)
+    self.ui.work.rootFrame:setEnable(true)
+end
+
+function Game:closeWorkScene()
+    self.workSceneOpened = false
+    self.ui.rootFrame:setEnable(true)
+    self.ui.work.rootFrame:setEnable(false)
 end
 
 function Game:tryUpgradeItem()
@@ -197,8 +249,10 @@ end
 
 function Game:setupUI()
     self:setupMainUI()
+    self:setupOutOfMoneyUI()
     self:setupShopUI()
     self:setupInvUI()
+    self:setupWorkUI()
 end
 
 local Color = {
@@ -213,29 +267,36 @@ function Game:setupMainUI()
         :setFont(self.defaultFont, {0, 0, 0, 255})
         ]]
 
+    self.ui.rootFrame = lui.Frame:new(0, 0, 0, 0, 160, 240)
+
     self.ui.shopButton = lui.Button:new(10, 10, 0, 0, 45, 20, self.coloredImages.yellow)
         :setText("Shop")
         :setFont(self.defaultFont, Color.WHITE)
+        :setParent(self.ui.rootFrame)
         :onPress(function() self:toggleShopMenu() end)
 
     self.ui.inventoryButton = lui.Button:new(80, 10, 0.5, 0, 45, 20, self.coloredImages.yellow)
         :setText("Inventory")
         :setFont(self.defaultFont, Color.WHITE)
+        :setParent(self.ui.rootFrame)
         :onPress(function() self:toggleInvMenu() end)
 
     self.ui.gameMoneyPanel = lui.Panel:new(150, 5, 1, 0, 45, 20)
         :setText("0 M", "right")
         :setFont(self.defaultFont, Color.BLACK)
+        :setParent(self.ui.rootFrame)
         :bindVar("text", function() return tostring(self.gameMoney) .. " M" end)
 
     self.ui.realMoneyPanel = lui.Panel:new(150, 20, 1, 0, 45, 20)
         :setText("0 Won", "right")
         :setFont(self.defaultFont, Color.BLACK)
-        :bindVar("text", function() return tostring(self.realMoney) .. " Won" end)
+        :setParent(self.ui.rootFrame)
+        :bindVar("text", function() return tostring(self.cash) .. " Won" end)
 
     self.ui.itemNameText = lui.Panel:new(80, 65, 0.5, 0.5, 200, 20)
         :setText("Level 1 Sword \"Shitty Sword\"")
         :setFont(self.defaultFont, {0, 0, 0, 255})
+        :setParent(self.ui.rootFrame)
         :bindVar("text", function()
             return "Level " .. tostring(self.curItemIndex) .. "   \"" .. self.curItem.name .."\""
         end)
@@ -243,11 +304,13 @@ function Game:setupMainUI()
     self.ui.sellCostText = lui.Panel:new(80, 80, 0.5, 0.5, 100, 20)
         :setText("Sell for: 0 M", "center")
         :setFont(self.defaultFont, {0, 0, 0, 255})
+        :setParent(self.ui.rootFrame)
         :bindVar("text", function() return "Sell for: " .. tostring(self.curItem.value) .. " M" end)
 
     self.ui.upgradeCostText = lui.Panel:new(80, 95, 0.5, 0.5, 100, 20)
         :setText("Upgrade Cost: 0 M", "center")
         :setFont(self.defaultFont, {0, 0, 0, 255})
+        :setParent(self.ui.rootFrame)
         :bindVar("text", function()
             return "Upgrade cost: " .. tostring(self.curItem.upgradeCost) .. " M"
         end)
@@ -255,11 +318,13 @@ function Game:setupMainUI()
     self.ui.probabilityText = lui.Panel:new(80, 110, 0.5, 0.5, 100, 20)
         :setText("Probablity: 0%")
         :setFont(self.defaultFont, {0, 0, 0, 255})
+        :setParent(self.ui.rootFrame)
         :bindVar("text", function() return "Probability: " .. tostring(math.floor(self.curItem.prob * 100)) .. "%" end)
 
     self.ui.sellButton = lui.Button:new(10, 230, 0, 1, 45, 20, self.coloredImages.red)
         :setText("Sell")
         :setFont(self.defaultFont, {255, 255, 255, 255})
+        :setParent(self.ui.rootFrame)
         :onPress(function() self:sellCurrentItem() end)
         :bindVar("isEnabled", function()
             return not self.upgradeFailed and self.lowerButtonsEnabled
@@ -268,6 +333,7 @@ function Game:setupMainUI()
     self.ui.keepButton = lui.Button:new(80, 230, 0.5, 1, 45, 20, self.coloredImages.green)
         :setText("Keep")
         :setFont(self.defaultFont, {255, 255, 255, 255})
+        :setParent(self.ui.rootFrame)
         :onPress(function() self:keepCurrentItem() end)
         :bindVar("isEnabled", function()
             return not self.upgradeFailed and self.lowerButtonsEnabled
@@ -276,6 +342,7 @@ function Game:setupMainUI()
     self.ui.upgradeButton = lui.Button:new(150, 230, 1, 1, 45, 20, self.coloredImages.blue)
         :setText("Upgrade")
         :setFont(self.defaultFont, {255, 255, 255, 255})
+        :setParent(self.ui.rootFrame)
         :onPress(function()
             if self.upgradeFailed then
                 self.upgradeFailed = false
@@ -291,10 +358,39 @@ function Game:setupMainUI()
         :bindVar("isEnabled", function() return self.lowerButtonsEnabled end)
 end
 
+function Game:setupOutOfMoneyUI()
+    self.ui.outOfMoneyPanel = lui.Panel:new(80, 120, 0.5, 0.5, 140, 80, self.coloredImages.red.pressed)
+        :setEnable(true)
+
+
+    self.ui.outOfMoney = {}
+
+    self.ui.outOfMoney.text = lui.Panel:new(70, 20, 0.5, 0.5, 140, 30)
+        :setText("You are almost out of money! :(")
+        :setFont(self.defaultFont, Color.WHITE)
+        :setParent(self.ui.outOfMoneyPanel)
+
+    self.ui.outOfMoney.acceptButton = lui.Button:new(5, 60, 0, 0.5, 60, 20, self.coloredImages.red)
+        :setText("Take a loan")
+        :setFont(self.defaultFont, Color.WHITE)
+        :setParent(self.ui.outOfMoneyPanel)
+        :onPress(function()
+        end)
+
+    self.ui.outOfMoney.workHarderButton = lui.Button:new(135, 60, 1, 0.5, 60, 20, self.coloredImages.green)
+        :setText("Work harder")
+        :setFont(self.defaultFont, Color.WHITE)
+        :setParent(self.ui.outOfMoneyPanel)
+        :onPress(function()
+            self:openWorkScene()
+        end)
+end
+
 function Game:setupShopUI()
     local shopWidth, shopHeight = 140, 190
     self.ui.shopMenu = lui.Panel:new(80, 135, 0.5, 0.5, shopWidth, shopHeight, self.outlineImages.yellow.pressed)
-        :bindVar("isEnabled", function() return self.shopMenuOpened end, lui.Frame.setEnable)
+        :bindVar("isEnabled", function() return self.shopMenuOpened end, lui.Frame.setEnableIncludingChildren)
+        :setParent(self.ui.rootFrame)
         :setEnable(false)
 
     self.ui.shop = {}
@@ -325,7 +421,7 @@ function Game:setupShopUI()
             self.ui.shop.selectedItem = item
         end)
 
-        local icon = lui.Image:new(15, 15, 0.5, 0.5, 16, 16, item.loadedImg or self.noImgSprite)
+        local icon = lui.Image:new(15, 15, 0.5, 0.5, 16, 16, item.loadedImg or self.sprites.noImg)
             :setParent(panel)
 
         panel.item = item
@@ -381,7 +477,8 @@ function Game:setupInvUI()
     local invWidth, invHeight = 140, 190
 
     self.ui.invMenu = lui.Panel:new(80, 135, 0.5, 0.5, invWidth, invHeight, self.outlineImages.green.pressed)
-        :bindVar("isEnabled", function() return self.invMenuOpened end, lui.Frame.setEnable)
+        :setParent(self.ui.rootFrame)
+        :bindVar("isEnabled", function() return self.invMenuOpened end, lui.Frame.setEnableIncludingChildren)
         :setEnable(false)
 
     self.ui.inv = {}
@@ -412,7 +509,7 @@ function Game:setupInvUI()
             self.ui.inv.selectedItem = item
         end)
 
-        local icon = lui.Image:new(12, 12, 0.5, 0.5, 16, 16, item.loadedImg or self.noImgSprite)
+        local icon = lui.Image:new(12, 12, 0.5, 0.5, 16, 16, item.loadedImg or self.sprites.noImg)
             :setParent(panel)
 
         panel.item = item
@@ -466,10 +563,87 @@ function Game:setupInvUI()
 
 end
 
+function Game:setupGachaUI()
+    local gachaWidth, gachaHeight = 140, 190
+
+    self.ui.gachaMenu = lui.Panel:new(80, 135, 0.5, 0.5, gachaWidth, gachaHeight, self.outlineImages.red.pressed)
+        :bindVar("isEnabled", function() return self.gachaMenuOpened end, lui.Frame.setEnable)
+        :setEnable(false)
+
+    self.ui.gacha = {}
+    local gacha = self.ui.gacha
+
+    gacha.items = {}
+
+    gacha.titleText = lui.Panel:new(gachaWidth/2, 5, 0.5, 0, 40, 15)
+        :setText("Gacha")
+        :setFont(self.defaultFont, Color.BLACK)
+        :setParent(self.ui.gachaMenu)
+
+    gacha.wonItems = {}
+    gacha.image = lui.ClickableImage:new(gachaWidth/2, gachaHeight/2, 0.5, 0.5, 64, 64, self.sprites.gachaPod)
+        :onPress(function()
+            gacha.wonItems = {}
+        end)
+        :setEnable(False)
+end
+
+function Game:setupWorkUI()
+    self.ui.work = {}
+    local work = self.ui.work
+    work.rootFrame = lui.Panel:new(0, 0, 0, 0, 160, 240)
+        :setEnable(false)
+    work.counter = 0
+
+    work.image = lui.ClickableImage:new(80, 60, 0.5, 0.5, 64, 64, self.sprites.work)
+        :setAnim(64, 64, 1, true, '1-2', 1)
+        :setParent(work.rootFrame)
+
+    work.image
+        :onPress(function()
+            work.image:gotoFrame(2)
+            work.counter = work.counter + 1
+            if work.counter >= 100 then
+                work.message:setEnable(true)
+                work.okButton:setEnable(true)
+            end
+        end)
+        :onRelease(function()
+            work.image:gotoFrame(1)
+        end)
+
+    work.progressText = lui.Panel:new(80, 140, 0.5, 0.5, 140, 40)
+        :setText("Progress: 0%")
+        :setFont(self.defaultFont, Color.WHITE)
+        :bindVar("text", function() return "Progress: " .. work.counter .. "%" end)
+        :setParent(work.rootFrame)
+
+    work.message = lui.Panel:new(80, 140, 0.5, 0.5, 140, 40, self.outlineImages.blue.pressed)
+        :setText("you have earned 3000000 won! your family leaves you 100000 to spend.")
+        :setFont(self.minimalFont, Color.BLACK)
+        :setEnable(false)
+        :setParent(work.rootFrame)
+
+    work.okButton = lui.Button:new(80, 190, 0.5, 0.5, 60, 20, self.coloredImages.blue)
+        :setText("Go on with life")
+        :setFont(self.defaultFont, Color.WHITE)
+        :setEnable(false)
+        :setParent(work.rootFrame)
+        :onPress(function()
+            self:addCash(100000)
+            self:closeWorkScene()
+        end)
+end
+
 function Game:update(dt)
 end
 
 function Game:draw()
+    if self.workSceneOpened then
+        love.graphics.setBackgroundColor(30, 30, 30, 255)
+        return
+    end
+    love.graphics.setBackgroundColor(255, 239, 138, 1)
     if self.upgradeFailed then
         love.graphics.printf("Upgrade Failed!", 80 - 100/2, 180, 100, "center")
         local w, h = self.upgradeFailedImage:getWidth(), self.upgradeFailedImage:getHeight()

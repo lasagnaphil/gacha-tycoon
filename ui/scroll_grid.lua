@@ -28,7 +28,9 @@ function ScrollGrid:setEntrySize(width, height)
 end
 
 function ScrollGrid:addEntry(entry)
-    entry:setPos(self.padding + x * (self.entryWidth + self.padding), self.padding + y * (self.entryHeight + self.padding))
+    local x = #self.entries % self.columns
+    local y = math.floor(#self.entries / self.columns)
+    entry:setPos(x * self.entryWidth + self.padding, y * self.entryHeight + self.padding)
          :setPivot(0, 0)
          :setSize(self.entryWidth, self.entryHeight)
 
@@ -54,6 +56,17 @@ function ScrollGrid:addDefaultEntry(spritePatch, text, font, fontColor)
     entry:setParent(self)
 
     return self
+end
+
+function ScrollGrid:clear()
+    for _, entry in ipairs(self.entries) do
+        lui:deleteFrame(entry)
+    end
+    self.children = iter(self.children)
+        :filter(function(child) return child.isEntry == nil end)
+        :totable()
+
+    self.entries = {}
 end
 
 function ScrollGrid:getLeftoverSpace()

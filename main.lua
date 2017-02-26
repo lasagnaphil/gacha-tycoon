@@ -2,20 +2,8 @@
 
 love.graphics.setDefaultFilter('nearest', 'nearest')
 
---[[
-local Monocle = require "lib.monocle"
-Monocle.new({
-    isActive = true,
-    customPrinter = false,
-    printColor = {51, 51, 51},
-    debugToggle = 'd',
-    filesToWatch = { "game.lua" }
-})
-
-Monocle.watch("FPS", function() return math.floor(1/love.timer.getDelta()) end)
-]]
-
 require "lib.fun"()
+require "utils.copy"
 class = require "lib.middleclass"
 CScreen = require "lib.cscreen"
 inspect = require "lib.inspect"

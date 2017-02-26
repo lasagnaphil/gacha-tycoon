@@ -47,11 +47,24 @@ function ScrollList:addDefaultEntry(spritePatch, text, font, fontColor)
         :setText(text)
         :setFont(font, fontColor)
 
+    entry.isEntry = true
+
     self.entries[#self.entries + 1] = entry
 
     entry:setParent(self)
 
     return self
+end
+
+function ScrollList:clear()
+    for _, entry in ipairs(self.entries) do
+        lui:deleteFrame(entry)
+    end
+    self.children = iter(self.children)
+        :filter(function(child) return child.isEntry == nil end)
+        :totable()
+
+    self.entries = {}
 end
 
 function ScrollList:getLeftoverSpace()

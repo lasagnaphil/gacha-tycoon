@@ -27,6 +27,19 @@ function lui:addInteractiveFrame(frame)
     self.iframes[#self.iframes + 1] = frame
 end
 
+function lui:deleteFrame(frame)
+    for i = #self.frames, 1, -1 do
+        if self.frames[i] == frame then
+            table.remove(self.frames, i)
+        end
+    end
+    for i = #self.iframes, 1, -1 do
+        if self.iframes[i] == frame then
+            table.remove(self.iframes, i)
+        end
+    end
+end
+
 function lui:setRootSize(w, h)
     self.Frame.static.setRootSize(w, h)
 end

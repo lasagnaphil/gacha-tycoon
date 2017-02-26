@@ -1,12 +1,14 @@
 local shopItems = {
     path = "shop_items",
     {
-        name = "item1",
-        description = "blah blah blah"
+        name = "Regular gacha box",
+        description = "test your fate to get cool weapons and items!",
+        cost = 5000
     },
     {
-        name = "item2",
-        description = "blah blah blah"
+        name = "Legendary gacha box",
+        description = "the best weapons and items are at your fingertips!",
+        cost = 100000
     }
 }
 

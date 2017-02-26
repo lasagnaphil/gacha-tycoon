@@ -4,8 +4,8 @@ function Game:initialize()
     self.name = "Game"
     self.moduleName = "game.lua"
 
-    self.gameMoney = 1000
-    self.realMoney = 1000
+    self.gameMoney = 300000
+    self.realMoney = 10000
 
     self.ui = {}
     self.shopMenuOpened = false
@@ -20,7 +20,12 @@ function Game:initialize()
         shopItems = require "shop_items"
     }
 
+    require "stat_calc"()
+
     self.inventory = require "inventory"
+    for _, itemList in pairs(self.items) do
+        self.inventory:addToDict(itemList)
+    end
 
     for kind, items in pairs(self.items) do
         for _, item in ipairs(items) do
@@ -123,22 +128,42 @@ function Game:setItem(arg)
     end
 end
 
-function Game:sellItem()
+function Game:sellCurrentItem()
     self.gameMoney = self.gameMoney + self.curItem.value
     self:setItem(1)
     self.gameMoney = self.gameMoney - self.items[self.curItemType][1].value
+end
+
+function Game:keepCurrentItem()
+    self.inventory:addItem(self.curItem.name)
+    self:setItem(1)
+    self.gameMoney = self.gameMoney - self.items[self.curItemType][1].value
+end
+
+function Game:sellItemInInventory(item)
+    local result = self.inventory:removeItem(item.name, 1)
+    if result then
+        self.gameMoney = self.gameMoney + (item.value or 0)
+    end
+    self.ui.inv.updateItems()
 end
 
 function Game:toggleShopMenu()
     self.invMenuOpened = false
     self.shopMenuOpened = not self.shopMenuOpened
     self.lowerButtonsEnabled = not self.shopMenuOpened
+    if self.shopMenuOpened then
+        self.ui.shop.updateItems()
+    end
 end
 
 function Game:toggleInvMenu()
     self.shopMenuOpened = false
     self.invMenuOpened = not self.invMenuOpened
     self.lowerButtonsEnabled = not self.invMenuOpened
+    if self.invMenuOpened then
+        self.ui.inv.updateItems()
+    end
 end
 
 function Game:tryUpgradeItem()
@@ -151,8 +176,6 @@ function Game:tryUpgradeItem()
     end
 end
 
-function Game:keepItem()
-end
 
 function Game:setupUI()
 
@@ -214,7 +237,7 @@ function Game:setupUI()
     self.ui.sellButton = lui.Button:new(10, 230, 0, 1, 45, 20, self.coloredImages.red)
         :setText("Sell")
         :setFont(self.defaultFont, {255, 255, 255, 255})
-        :onPress(function() self:sellItem() end)
+        :onPress(function() self:sellCurrentItem() end)
         :bindVar("isEnabled", function()
             return not self.upgradeFailed and self.lowerButtonsEnabled
         end)
@@ -222,7 +245,7 @@ function Game:setupUI()
     self.ui.keepButton = lui.Button:new(80, 230, 0.5, 1, 45, 20, self.coloredImages.green)
         :setText("Keep")
         :setFont(self.defaultFont, {255, 255, 255, 255})
-        :onPress(function() self:keepItem() end)
+        :onPress(function() self:keepCurrentItem() end)
         :bindVar("isEnabled", function()
             return not self.upgradeFailed and self.lowerButtonsEnabled
         end)
@@ -269,14 +292,12 @@ function Game:setupUI()
             :setFont(self.defaultFont, Color.BLACK)
 
         panel:onPress(function()
+            if self.ui.shop.selectedItemPanel then
+                self.ui.shop.selectedItemPanel:setSpritePatches(self.outlineImages.blue)
+            end
             panel:setSpritePatches(self.outlineImages.red)
             self.ui.shop.selectedItemPanel = panel
             self.ui.shop.selectedItem = item
-            for _, itemPanel in ipairs(self.ui.shop.items) do
-                if itemPanel ~= panel then
-                    itemPanel:setSpritePatches(self.outlineImages.blue)
-                end
-            end
         end)
 
         local icon = lui.Image:new(15, 15, 0.5, 0.5, 16, 16, item.loadedImg or self.noImgSprite)
@@ -284,28 +305,32 @@ function Game:setupUI()
 
         panel.item = item
 
+        self.ui.shop.itemList:addEntry(panel)
+
         return panel
     end
 
     self.ui.shop.updateItems = function()
+        self.ui.shop.selectedItemPanel = nil
+        self.ui.shop.selectedItem = nil
+        self.ui.shop.itemList:clear()
         self.ui.shop.items = iter(self.items.shopItems)
             :map(function(item)
-                local panel = self.ui.shop.newItemPanel(item)
-                self.ui.shop.itemList:addEntry(panel)
-                return panel
+                return self.ui.shop.newItemPanel(item)
             end)
             :totable()
     end
-    self.ui.shop.updateItems()
 
-    self.ui.shop.descriptionText = "<description>"
     self.ui.shop.description = lui.Panel:new(shopWidth/2, shopHeight-24, 0.5, 1, shopWidth*0.8, shopHeight*0.2)
         :setText(self.ui.shop.descriptionText)
         :setFont(self.minimalFont, Color.BLACK)
         :setParent(self.ui.shopMenu)
-        :bindVar("text", function() return self.ui.shop.descriptionText end)
+        :bindVar("text", function()
+            if self.ui.shop.selectedItem == nil then return "" end
+            return self.ui.shop.selectedItem.description or "<description>"
+        end)
 
-    self.ui.shop.description = lui.Panel:new(10, shopHeight-9, 0, 1, shopWidth*0.3, 10)
+    self.ui.shop.costPanel = lui.Panel:new(10, shopHeight-9, 0, 1, shopWidth*0.7, 10)
         :setText("cost: 1000", "left")
         :setFont(self.minimalFont, Color.BLACK)
         :setParent(self.ui.shopMenu)
@@ -321,13 +346,14 @@ function Game:setupUI()
         :onPress(function()
         end)
 
-    local invWidth, invHeight = 140, 160
+    local invWidth, invHeight = 140, 190
 
-    self.ui.invMenu = lui.Panel:new(80, 120, 0.5, 0.5, invWidth, invHeight, self.outlineImages.green.pressed)
+    self.ui.invMenu = lui.Panel:new(80, 135, 0.5, 0.5, invWidth, invHeight, self.outlineImages.green.pressed)
         :bindVar("isEnabled", function() return self.invMenuOpened end, lui.Frame.setEnable)
         :setEnable(false)
 
     self.ui.inv = {}
+    self.ui.inv.items = {}
 
     self.ui.inv.titleText = lui.Panel:new(invWidth/2, 5, 0.5, 0, 40, 15)
         :setText("Inventory")
@@ -339,27 +365,28 @@ function Game:setupUI()
         :setEntrySize(32, 32)
         :setEnable(false)
 
-    self.ui.inv.itemList:addDefaultEntry(self.outlineImages.yellow.pressed, "H", self.minimalFont, Color.BLACK)
-                        :addDefaultEntry(self.outlineImages.yellow.pressed, "H", self.minimalFont, Color.BLACK)
-                        :addDefaultEntry(self.outlineImages.yellow.pressed, "H", self.minimalFont, Color.BLACK)
-                        :addDefaultEntry(self.outlineImages.yellow.pressed, "H", self.minimalFont, Color.BLACK)
-                        :addDefaultEntry(self.outlineImages.yellow.pressed, "H", self.minimalFont, Color.BLACK)
-                        :addDefaultEntry(self.outlineImages.yellow.pressed, "H", self.minimalFont, Color.BLACK)
-                        :addDefaultEntry(self.outlineImages.yellow.pressed, "H", self.minimalFont, Color.BLACK)
-                        :addDefaultEntry(self.outlineImages.yellow.pressed, "H", self.minimalFont, Color.BLACK)
-                        :addDefaultEntry(self.outlineImages.yellow.pressed, "H", self.minimalFont, Color.BLACK)
-                        :addDefaultEntry(self.outlineImages.yellow.pressed, "H", self.minimalFont, Color.BLACK)
-                        :addDefaultEntry(self.outlineImages.yellow.pressed, "H", self.minimalFont, Color.BLACK)
-                        :addDefaultEntry(self.outlineImages.yellow.pressed, "H", self.minimalFont, Color.BLACK)
-                        :addDefaultEntry(self.outlineImages.yellow.pressed, "H", self.minimalFont, Color.BLACK)
-                        :addDefaultEntry(self.outlineImages.yellow.pressed, "H", self.minimalFont, Color.BLACK)
-                        :addDefaultEntry(self.outlineImages.yellow.pressed, "H", self.minimalFont, Color.BLACK)
-                        :addDefaultEntry(self.outlineImages.yellow.pressed, "H", self.minimalFont, Color.BLACK)
-                        :addDefaultEntry(self.outlineImages.yellow.pressed, "H", self.minimalFont, Color.BLACK)
-                        :addDefaultEntry(self.outlineImages.yellow.pressed, "H", self.minimalFont, Color.BLACK)
-                        :addDefaultEntry(self.outlineImages.yellow.pressed, "H", self.minimalFont, Color.BLACK)
-                        :addDefaultEntry(self.outlineImages.yellow.pressed, "H", self.minimalFont, Color.BLACK)
-                        :addDefaultEntry(self.outlineImages.yellow.pressed, "H", self.minimalFont, Color.BLACK)
+    self.ui.inv.selectedItem = nil
+    self.ui.inv.selectedItemPanel = nil
+
+    self.ui.inv.newItemPanel = function(item)
+        local entry = lui.Button:new(0, 0, 0, 0, 100, 100, self.outlineImages.blue)
+            :onPress(function()
+            end)
+
+        local icon = lui.Image:new(0, 0, 0.5, 0.5, 16, 16, item.loadedImg or self.noImgSprite)
+            :setParent(entry)
+
+        self.ui.inv.itemList:addEntry(entry)
+    end
+
+    self.ui.inv.updateItems = function()
+        self.ui.inv.itemList:clear()
+        self.ui.inv.items = iter(self.inventory:getAllItems())
+            :map(function(item)
+                return self.ui.inv.newItemPanel(item.data)
+            end)
+            :totable()
+    end
 
     self.ui.inv.description = lui.Panel:new(invWidth/2, invHeight-24, 0.5, 1, invWidth*0.8, invHeight*0.2)
         :setText("do something that is totally crazy")

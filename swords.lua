@@ -117,9 +117,6 @@ local knives = {
         upgradeCost = 5000000,
         prob = 0.25
     },
-    {
-
-    }
     --[[
     {
         name = "귀족의 청동칼",

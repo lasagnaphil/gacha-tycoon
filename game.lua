@@ -22,6 +22,11 @@ function Game:initialize()
 
     require "stat_calc"()
 
+    for i, item in ipairs(self.items.swords) do
+        item.type = "sword"
+        item.level = i
+    end
+
     self.inventory = require "inventory"
     for _, itemList in pairs(self.items) do
         self.inventory:addToDict(itemList)
@@ -433,7 +438,11 @@ function Game:setupInvUI()
         :setParent(self.ui.invMenu)
         :bindVar("text", function()
             if self.ui.inv.selectedItem then
-                return self.ui.inv.selectedItem.description or ""
+                if self.ui.inv.selectedItem.type == "sword" then
+                    local level = self.ui.inv.selectedItem.level
+                    local name = self.ui.inv.selectedItem.name
+                    return "level " .. tostring(level).. "   \"" .. string.lower(name) .. "\""
+                else return self.ui.inv.selectedItem.description end
             else return "" end
         end)
 
@@ -441,6 +450,14 @@ function Game:setupInvUI()
         :setText("Sell")
         :setFont(self.defaultFont, Color.BLACK)
         :setParent(self.ui.invMenu)
+        :bindVar("text", function()
+            return self.ui.inv.selectedItem and self.ui.inv.selectedItem.value end, lui.Frame.setEnable
+        )
+        :onPress(function()
+            if self:useMoney(self.ui.inv.selectedItem.value) then
+                self.inventory:removeItem(self.ui.inv.selectedItem.name)
+            end
+        end)
 
     self.ui.inv.useButton = lui.Button:new(invWidth-5, invHeight-5, 1, 1, 40, 20, self.outlineImages.blue)
         :setText("Use")

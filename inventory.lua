@@ -8,9 +8,9 @@ function Inventory:addItem(name, amount)
         error("Inventory:addItem(): Item " .. name .. " is not in item dictionary")
     end
     if self.items[name] == nil then
-        self.items[name] = amount
+        self.items[name] = (amount or 1)
     else
-        self.items[name].amount = self.items[name].amount + amount
+        self.items[name] = self.items[name] + (amount or 1)
     end
     return true
 end
@@ -30,13 +30,23 @@ function Inventory:removeItem(name, amount)
     if self.items[name] == nil then
         return false
     else
-        if self.items[name].amount < amount then return false end
-        self.items[name].amount = self.items[name].amount - amount
+        if self.items[name] < amount then return false end
+        self.items[name] = self.items[name] - amount
         return true
     end
 end
 
 function Inventory:getAllItems()
+    local allItems = {}
+    for name, amount in pairs(self.items) do
+        allItems[#allItems + 1] = {
+            name = name,
+            data = self.itemDict[name],
+            amount = amount
+        }
+    end
+    return allItems
+    --[[
     return iter(self.items)
         :map(function(name, amount)
             return {
@@ -45,6 +55,7 @@ function Inventory:getAllItems()
             }
         end)
         :totable()
+        ]]
 end
 
 return Inventory

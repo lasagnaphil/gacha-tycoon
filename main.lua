@@ -1,4 +1,4 @@
---require "lib.lovedebug"
+require "lib.lovedebug"
 
 love.graphics.setDefaultFilter('nearest', 'nearest')
 
@@ -13,6 +13,7 @@ assets = require("lib.cargo").init("assets")
 anim8 = require "lib.anim8"
 lui = require "ui.lui"
 require "utils.errors"
+Random = require "utils.random"
 local Stack = require "utils.stack"
 autolove = require "utils.autolove"
 

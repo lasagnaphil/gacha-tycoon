@@ -111,12 +111,19 @@ local knives = {
         prob = 0.30
     },
     {
-        name = "Bubble sword",
-        korName = "풍선검",
+        name = "Invisible sword",
+        img = "invisible_sword.png",
         value = 30000000,
         upgradeCost = 5000000,
         prob = 0.25
     },
+    {
+        name = "Lightsaber",
+        img = "lightsaber.png",
+        value = 100000000,
+        upgradeCost = 15000000,
+        prob = 0.20
+    }
     --[[
     {
         name = "귀족의 청동칼",

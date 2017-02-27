@@ -29,6 +29,9 @@ function lui:addInteractiveFrame(frame)
 end
 
 function lui:deleteFrame(frame)
+    for _, child in ipairs(frame.children) do
+        self:deleteFrame(child)
+    end
     for i = #self.frames, 1, -1 do
         if self.frames[i] == frame then
             table.remove(self.frames, i)

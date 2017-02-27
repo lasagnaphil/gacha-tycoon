@@ -12,18 +12,18 @@ local gachaData = {
             IntRange(1, 4),
             IntRange(5, 8),
             IntRange(9, 13),
-            IntRange(14, 17)
+            IntRange(14, 16)
         }
     },
     prob = {
         regular = {
             swords = {
-                0.70, 0.20, 0.07, 0.03
+                0.72, 0.20, 0.07, 0.01
             }
         },
         legendary = {
             swords = {
-                0, 0.60, 0.30, 0.10
+                0.20, 0.50, 0.25, 0.05
             }
         },
     }

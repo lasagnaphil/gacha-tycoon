@@ -16,8 +16,10 @@ function Game:initialize(gsm)
 
     self.sprites = {
         noImg = love.graphics.newImage("assets/img/no-image.png"),
-        gachaPod = love.graphics.newImage("assets/img/gacha1.png"),
+        gacha = love.graphics.newImage("assets/img/gacha1.png"),
+        gachaOpened = love.graphics.newImage("assets/img/gacha2.png"),
         work = love.graphics.newImage("assets/img/worker.png"),
+        mystery = love.graphics.newImage("assets/img/mystery.png")
     }
 
     -- current type of item
@@ -27,6 +29,8 @@ function Game:initialize(gsm)
         swords = require "swords",
         shopItems = require "shop_items"
     }
+
+    self.gachaData = require "gacha_data"
 
     require "stat_calc"()
 
@@ -121,11 +125,11 @@ function Game:initialize(gsm)
 
     self.shopMenuOpened = false
     self.invMenuOpened = false
-    self.gachaSceneOpened = false
+    self.gachaMenuOpened = false
     self.workSceneOpened = false
     self.lowerButtonsEnabled = true
     self:setupUI()
-    self:setupGachaUI()
+    self:openGachaMenu()
 end
 
 function Game:setItem(arg)
@@ -208,15 +212,17 @@ function Game:toggleInvMenu()
     self.ui.rootFrame:setEnable(true)
 end
 
-function Game:openGachaScene()
+function Game:openGachaMenu()
     self.shopMenuOpened = false
     self.invMenuOpened = false
-    self.gachaSceneOpened = true
+    self.lowerButtonsEnabled = false
+    self.gachaMenuOpened = true
     self.ui.rootFrame:setEnable(false)
 end
 
-function Game:closeGachaScene()
-    self.gachaSceneOpened = false
+function Game:closeGachaMenu()
+    self.gachaMenuOpened = false
+    self.lowerButtonsEnabled = true
     self.ui.rootFrame:setEnable(true)
 end
 
@@ -246,12 +252,28 @@ function Game:tryUpgradeItem()
     end
 end
 
+function Game:useItem(item)
+    if item.type == "gacha" then
+        self:openGachaMenu()
+        self.ui.gacha.type = item.gachaType
+        self.inventory:removeItem(item.name)
+    end
+    self.ui.inv.updateItems()
+end
+
+
+function Game:sellItem(item)
+    self.inventory:removeItem(item.name)
+    self.ui.inv.updateItems()
+    self:addMoney(item.value)
+end
 
 function Game:setupUI()
     self:setupMainUI()
     self:setupOutOfMoneyUI()
     self:setupShopUI()
     self:setupInvUI()
+    self:setupGachaUI()
     self:setupWorkUI()
 end
 
@@ -360,8 +382,7 @@ end
 
 function Game:setupOutOfMoneyUI()
     self.ui.outOfMoneyPanel = lui.Panel:new(80, 120, 0.5, 0.5, 140, 80, self.coloredImages.red.pressed)
-        :setEnable(true)
-
+        :setEnable(false)
 
     self.ui.outOfMoney = {}
 
@@ -387,7 +408,7 @@ function Game:setupOutOfMoneyUI()
 end
 
 function Game:setupShopUI()
-    local shopWidth, shopHeight = 140, 190
+    local shopWidth, shopHeight = 140, 200
     self.ui.shopMenu = lui.Panel:new(80, 135, 0.5, 0.5, shopWidth, shopHeight, self.outlineImages.yellow.pressed)
         :bindVar("isEnabled", function() return self.shopMenuOpened end, lui.Frame.setEnableIncludingChildren)
         :setParent(self.ui.rootFrame)
@@ -400,7 +421,7 @@ function Game:setupShopUI()
         :setFont(self.defaultFont, Color.BLACK)
         :setParent(self.ui.shopMenu)
 
-    self.ui.shop.itemList = lui.ScrollList:new(shopWidth/2, 20, 0.5, 0, 120, 120, self.outlineImages.yellow.pressed)
+    self.ui.shop.itemList = lui.ScrollList:new(shopWidth/2, 20, 0.5, 0, shopWidth-14, 120, self.outlineImages.yellow.pressed)
         :setParent(self.ui.shopMenu)
         :setEntryHeight(30)
         :setEnable(false)
@@ -421,7 +442,7 @@ function Game:setupShopUI()
             self.ui.shop.selectedItem = item
         end)
 
-        local icon = lui.Image:new(15, 15, 0.5, 0.5, 16, 16, item.loadedImg or self.sprites.noImg)
+        local icon = lui.Image:new(12, 14, 0.5, 0.5, 16, 16, item.loadedImg or self.sprites.noImg)
             :setParent(panel)
 
         panel.item = item
@@ -482,22 +503,25 @@ function Game:setupInvUI()
         :setEnable(false)
 
     self.ui.inv = {}
-    self.ui.inv.items = {}
+    local inv = self.ui.inv
 
-    self.ui.inv.titleText = lui.Panel:new(invWidth/2, 5, 0.5, 0, 40, 15)
+    inv.items = {}
+
+    inv.titleText = lui.Panel:new(invWidth/2, 5, 0.5, 0, 40, 15)
         :setText("Inventory")
         :setFont(self.defaultFont, Color.BLACK)
         :setParent(self.ui.invMenu)
 
-    self.ui.inv.itemList = lui.ScrollGrid:new(invWidth/2, 20, 0.5, 0, 120, 120, self.outlineImages.yellow.pressed)
+    inv.itemList = lui.ScrollGrid:new(invWidth/2, 20, 0.5, 0, 120, 120, self.outlineImages.yellow.pressed)
+        :setDimensions(4, 100)
         :setParent(self.ui.invMenu)
         :setEntrySize(24, 24)
         :setEnable(false)
 
-    self.ui.inv.selectedItem = nil
-    self.ui.inv.selectedItemPanel = nil
+    inv.selectedItem = nil
+    inv.selectedItemPanel = nil
 
-    self.ui.inv.newItemPanel = function(item)
+    inv.newItemPanel = function(item)
         local panel = lui.Button:new(0, 0, 0, 0, 100, 100, self.outlineImages.blue)
 
         panel:onPress(function()
@@ -506,10 +530,16 @@ function Game:setupInvUI()
             end
             panel:setSpritePatches(self.outlineImages.red)
             self.ui.inv.selectedItemPanel = panel
-            self.ui.inv.selectedItem = item
+            self.ui.inv.selectedItem = item.data
         end)
 
-        local icon = lui.Image:new(12, 12, 0.5, 0.5, 16, 16, item.loadedImg or self.sprites.noImg)
+        local icon = lui.Image:new(12, 12, 0.5, 0.5, 16, 16, item.data.loadedImg or self.sprites.noImg)
+            :setParent(panel)
+
+        local number = lui.Panel:new(24, 0, 1, 0, 10, 10)
+            :setText("1")
+            :setFont(self.minimalFont, Color.BLACK)
+            :bindVar("text", function() return self.inventory.items[item.name] end)
             :setParent(panel)
 
         panel.item = item
@@ -517,19 +547,19 @@ function Game:setupInvUI()
         self.ui.inv.itemList:addEntry(panel)
     end
 
-    self.ui.inv.updateItems = function()
+    inv.updateItems = function()
         self.ui.inv.selectedItemPanel = nil
         self.ui.inv.selectedItem = nil
         self.ui.inv.itemList:clear()
         print(inspect(self.inventory:getAllItems()))
         self.ui.inv.items = iter(self.inventory:getAllItems())
             :map(function(item)
-                return self.ui.inv.newItemPanel(item.data)
+                return self.ui.inv.newItemPanel(item)
             end)
             :totable()
     end
 
-    self.ui.inv.description = lui.Panel:new(invWidth/2, invHeight-24, 0.5, 1, invWidth*0.8, invHeight*0.2)
+    inv.description = lui.Panel:new(invWidth/2, invHeight-24, 0.5, 1, invWidth*0.8, invHeight*0.2)
         :setText("<description>")
         :setFont(self.minimalFont, Color.BLACK)
         :setParent(self.ui.invMenu)
@@ -543,7 +573,7 @@ function Game:setupInvUI()
             else return "" end
         end)
 
-    self.ui.inv.sellButton = lui.Button:new(invWidth-45, invHeight-5, 1, 1, 40, 20, self.outlineImages.blue)
+    inv.sellButton = lui.Button:new(invWidth-45, invHeight-5, 1, 1, 40, 20, self.outlineImages.blue)
         :setText("Sell")
         :setFont(self.defaultFont, Color.BLACK)
         :setParent(self.ui.invMenu)
@@ -551,28 +581,34 @@ function Game:setupInvUI()
             return self.ui.inv.selectedItem and self.ui.inv.selectedItem.value end, lui.Frame.setEnable
         )
         :onPress(function()
-            if self:useMoney(self.ui.inv.selectedItem.value) then
-                self.inventory:removeItem(self.ui.inv.selectedItem.name)
+            if inv.selectedItem then
+                self:sellItem(inv.selectedItem)
             end
         end)
 
-    self.ui.inv.useButton = lui.Button:new(invWidth-5, invHeight-5, 1, 1, 40, 20, self.outlineImages.blue)
+    inv.useButton = lui.Button:new(invWidth-5, invHeight-5, 1, 1, 40, 20, self.outlineImages.blue)
         :setText("Use")
         :setFont(self.defaultFont, Color.BLACK)
         :setParent(self.ui.invMenu)
+        :onPress(function()
+            if inv.selectedItem then
+                self:useItem(inv.selectedItem)
+            end
+        end)
 
 end
 
 function Game:setupGachaUI()
-    local gachaWidth, gachaHeight = 140, 190
+    local gachaWidth, gachaHeight = 154, 220
 
-    self.ui.gachaMenu = lui.Panel:new(80, 135, 0.5, 0.5, gachaWidth, gachaHeight, self.outlineImages.red.pressed)
-        :bindVar("isEnabled", function() return self.gachaMenuOpened end, lui.Frame.setEnable)
+    self.ui.gachaMenu = lui.Panel:new(80, 120, 0.5, 0.5, gachaWidth, gachaHeight, self.outlineImages.red.pressed)
+        :bindVar("isEnabled", function() return self.gachaMenuOpened end, lui.Frame.setEnableIncludingChildren)
         :setEnable(false)
 
     self.ui.gacha = {}
     local gacha = self.ui.gacha
 
+    gacha.type = "regular"
     gacha.items = {}
 
     gacha.titleText = lui.Panel:new(gachaWidth/2, 5, 0.5, 0, 40, 15)
@@ -581,11 +617,61 @@ function Game:setupGachaUI()
         :setParent(self.ui.gachaMenu)
 
     gacha.wonItems = {}
-    gacha.image = lui.ClickableImage:new(gachaWidth/2, gachaHeight/2, 0.5, 0.5, 64, 64, self.sprites.gachaPod)
+    gacha.clicked = false
+    gacha.image = lui.Image:new(gachaWidth/2, 120, 0.5, 0.5, 64, 64, self.sprites.gacha)
+        :setParent(self.ui.gachaMenu)
+
+    gacha.openButton = lui.Button:new(gachaWidth/2, 190, 0.5, 0.5, 60, 30, self.outlineImages.yellow)
+        :setText("Open!")
+        :setFont(self.defaultFont, Color.BLACK)
         :onPress(function()
-            gacha.wonItems = {}
+            gacha.image.width, gacha.image.height = 64, 64
+            gacha.image:setSprite(self.sprites.gacha)
+            flux.to(gacha.image, 0.5, { width = gacha.image.width * 2, height = gacha.image.height * 2 })
+                :ease("elasticinout")
+                :onupdate(function() gacha.image:updatePos() end)
+                :oncomplete(function()
+                    local itemIndexes = {}
+                    for i = 1, 4 do
+                        local dice = Random.skewedDice(self.gachaData.prob[gacha.type].swords)
+                        local itemRange = self.gachaData.class.swords[dice]
+                        print(inspect(itemRange))
+                        local itemNum = Random.dice(itemRange)
+                        print(itemNum)
+                        itemIndexes[i] = itemNum
+                    end
+                    for i, image in ipairs(gacha.itemImages) do
+                        gacha.wonItems[i] = self.items.swords[itemIndexes[i]]
+                        image:setSprite(gacha.wonItems[i].loadedImg)
+                    end
+                    gacha.image:setSprite(self.sprites.gachaOpened)
+                    gacha.clicked = true
+
+                    -- insert the gacha items into inventory
+                    for _, item in ipairs(gacha.wonItems) do
+                        self.inventory:addItem(item.name)
+                    end
+                end)
         end)
-        :setEnable(False)
+        :setParent(self.ui.gachaMenu)
+
+    gacha.closeButton = lui.Button:new(gachaWidth/2 + 52, 190, 0.5, 0.5, 40, 30, self.outlineImages.blue)
+        :setText("Back")
+        :setFont(self.defaultFont, Color.BLACK)
+        :onPress(function()
+            self:closeGachaMenu()
+        end)
+        :setParent(self.ui.gachaMenu)
+
+    gacha.itemPanel = lui.Panel:new(gachaWidth/2, 40, 0.5, 0.5, gachaWidth*0.95, 40, self.outlineImages.red.pressed)
+        :setParent(self.ui.gachaMenu)
+
+    gacha.itemImages = {
+        lui.Image:new(5, 2, 0, 0, 32, 32, self.sprites.mystery):setParent(gacha.itemPanel),
+        lui.Image:new(39, 2, 0, 0, 32, 32, self.sprites.mystery):setParent(gacha.itemPanel),
+        lui.Image:new(72, 2, 0, 0, 32, 32, self.sprites.mystery):setParent(gacha.itemPanel),
+        lui.Image:new(107, 2, 0, 0, 32, 32, self.sprites.mystery):setParent(gacha.itemPanel),
+    }
 end
 
 function Game:setupWorkUI()

@@ -51,7 +51,7 @@ end
 function love.load()
     CScreen.init(160, 240, true)
     lui:init(CScreen.getInfo())
-    gsm:push(states.Game:new(gsm))
+    gsm:push(states.Title:new(gsm))
     --autolove:init(stateModules, states, reloadGame)
     require("stat_calc")()
 end

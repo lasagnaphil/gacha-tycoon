@@ -12,7 +12,7 @@ local gachaData = {
             IntRange(1, 4),
             IntRange(5, 8),
             IntRange(9, 13),
-            IntRange(14, 16)
+            IntRange(14, 15)
         }
     },
     prob = {

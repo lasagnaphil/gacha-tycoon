@@ -1,4 +1,4 @@
-require "lib.lovedebug"
+--require "lib.lovedebug"
 
 love.graphics.setDefaultFilter('nearest', 'nearest')
 
@@ -22,13 +22,11 @@ lui:setRootSize(160, 240)
 local states = {
     Game = require "game",
     Title = require "title",
-    Gacha = require "gacha"
 }
 
 local stateModules = {
     Game = "game.lua",
     Title = "title.lua",
-    Gacha = "gacha.lua"
 }
 
 local lastStateSave = {}
@@ -55,6 +53,7 @@ function love.load()
     lui:init(CScreen.getInfo())
     gsm:push(states.Game:new(gsm))
     --autolove:init(stateModules, states, reloadGame)
+    require("stat_calc")()
 end
 
 function love.update(dt)
@@ -82,7 +81,9 @@ end
 function love.keypressed(key, scancode, isrepeat)
     stateCall("keypressed", key, scancode, isrepeta)
     if key == "r" then
-        reloadGame()
+        require("stat_calc")()
+    elseif key == "escape" then
+        love.event.quit()
     end
     --Monocle.keypressed(key)
 end

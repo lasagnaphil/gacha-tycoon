@@ -6,8 +6,8 @@ function Game:initialize(gsm)
     self.name = "Game"
     self.moduleName = "game.lua"
 
-    self.gameMoney = 300000
-    self.cash = 10000
+    self.gameMoney = 3000000
+    self.cash = 110000
 
     self.ui = {}
     self.upgradeFailed = false
@@ -31,8 +31,6 @@ function Game:initialize(gsm)
     }
 
     self.gachaData = require "gacha_data"
-
-    require "stat_calc"()
 
     for i, item in ipairs(self.items.swords) do
         item.type = "sword"
@@ -125,11 +123,11 @@ function Game:initialize(gsm)
 
     self.shopMenuOpened = false
     self.invMenuOpened = false
+    self.outOfMoneyMenuOpened = false
     self.gachaMenuOpened = false
     self.workSceneOpened = false
     self.lowerButtonsEnabled = true
     self:setupUI()
-    self:openGachaMenu()
 end
 
 function Game:setItem(arg)
@@ -192,6 +190,10 @@ function Game:sellItemInInventory(item)
     self.ui.inv.updateItems()
 end
 
+function Game:toggleOutOfMoneyMenu()
+    self.outOfMoneyMenuOpened = not self.outOfMoneyMenuOpened
+end
+
 function Game:toggleShopMenu()
     self.invMenuOpened = false
     self.shopMenuOpened = not self.shopMenuOpened
@@ -230,8 +232,8 @@ function Game:openWorkScene()
     self.shopMenuOpened = false
     self.invMenuOpened = false
     self.workSceneOpened = true
+    self.outOfMoneyMenuOpened = false
     self.ui.rootFrame:setEnable(false)
-    self.ui.outOfMoneyPanel:setEnable(false)
     self.ui.work.rootFrame:setEnable(true)
 end
 
@@ -253,11 +255,14 @@ function Game:tryUpgradeItem()
 end
 
 function Game:useItem(item)
-    if item.type == "gacha" then
-        self:openGachaMenu()
-        self.ui.gacha.type = item.gachaType
-        self.inventory:removeItem(item.name)
+    if item.behavior then
+        item:behavior(self)
     end
+    if item.type == "sword" then
+        self:setItem(item.level)
+        self:toggleInvMenu()
+    end
+    self.outOfMoneyMenuOpened = false
     self.ui.inv.updateItems()
 end
 
@@ -315,7 +320,15 @@ function Game:setupMainUI()
         :setParent(self.ui.rootFrame)
         :bindVar("text", function() return tostring(self.cash) .. " Won" end)
 
-    self.ui.itemNameText = lui.Panel:new(80, 65, 0.5, 0.5, 200, 20)
+    self.ui.workButton = lui.Button:new(150, 38, 1, 0, 45, 20, self.coloredImages.yellow)
+        :setText("Work")
+        :setFont(self.defaultFont, Color.WHITE)
+        :setParent(self.ui.rootFrame)
+        :onPress(function()
+            self:toggleOutOfMoneyMenu()
+        end)
+
+    self.ui.itemNameText = lui.Panel:new(80, 70, 0.5, 0.5, 200, 20)
         :setText("Level 1 Sword \"Shitty Sword\"")
         :setFont(self.defaultFont, {0, 0, 0, 255})
         :setParent(self.ui.rootFrame)
@@ -323,13 +336,13 @@ function Game:setupMainUI()
             return "Level " .. tostring(self.curItemIndex) .. "   \"" .. self.curItem.name .."\""
         end)
 
-    self.ui.sellCostText = lui.Panel:new(80, 80, 0.5, 0.5, 100, 20)
+    self.ui.sellCostText = lui.Panel:new(80, 85, 0.5, 0.5, 100, 20)
         :setText("Sell for: 0 M", "center")
         :setFont(self.defaultFont, {0, 0, 0, 255})
         :setParent(self.ui.rootFrame)
         :bindVar("text", function() return "Sell for: " .. tostring(self.curItem.value) .. " M" end)
 
-    self.ui.upgradeCostText = lui.Panel:new(80, 95, 0.5, 0.5, 100, 20)
+    self.ui.upgradeCostText = lui.Panel:new(80, 100, 0.5, 0.5, 100, 20)
         :setText("Upgrade Cost: 0 M", "center")
         :setFont(self.defaultFont, {0, 0, 0, 255})
         :setParent(self.ui.rootFrame)
@@ -337,7 +350,7 @@ function Game:setupMainUI()
             return "Upgrade cost: " .. tostring(self.curItem.upgradeCost) .. " M"
         end)
 
-    self.ui.probabilityText = lui.Panel:new(80, 110, 0.5, 0.5, 100, 20)
+    self.ui.probabilityText = lui.Panel:new(80, 115, 0.5, 0.5, 100, 20)
         :setText("Probablity: 0%")
         :setFont(self.defaultFont, {0, 0, 0, 255})
         :setParent(self.ui.rootFrame)
@@ -347,9 +360,25 @@ function Game:setupMainUI()
         :setText("Sell")
         :setFont(self.defaultFont, {255, 255, 255, 255})
         :setParent(self.ui.rootFrame)
-        :onPress(function() self:sellCurrentItem() end)
+        :onPress(function()
+            if self.upgradeFailed then
+                if self.inventory:removeItem("Revive sword") then
+                    self.upgradeFailed = false
+                end
+            else
+                self:sellCurrentItem()
+            end
+        end)
+        :bindVar("text", function()
+            if self.upgradeFailed then
+                local reviveCount = self.inventory.items["Revive sword"] or 0
+                return "Revive (" .. reviveCount .. ")"
+            else
+                return "Sell"
+            end
+        end)
         :bindVar("isEnabled", function()
-            return not self.upgradeFailed and self.lowerButtonsEnabled
+            return self.lowerButtonsEnabled
         end)
 
     self.ui.keepButton = lui.Button:new(80, 230, 0.5, 1, 45, 20, self.coloredImages.green)
@@ -382,12 +411,13 @@ end
 
 function Game:setupOutOfMoneyUI()
     self.ui.outOfMoneyPanel = lui.Panel:new(80, 120, 0.5, 0.5, 140, 80, self.coloredImages.red.pressed)
+        :bindVar("isEnabled", function() return self.outOfMoneyMenuOpened end, lui.Frame.setEnableIncludingChildren)
         :setEnable(false)
 
     self.ui.outOfMoney = {}
 
     self.ui.outOfMoney.text = lui.Panel:new(70, 20, 0.5, 0.5, 140, 30)
-        :setText("You are almost out of money! :(")
+        :setText("Out of cash? :(")
         :setFont(self.defaultFont, Color.WHITE)
         :setParent(self.ui.outOfMoneyPanel)
 
@@ -415,20 +445,21 @@ function Game:setupShopUI()
         :setEnable(false)
 
     self.ui.shop = {}
+    local shop = self.ui.shop
 
-    self.ui.shop.titleText = lui.Panel:new(shopWidth/2, 5, 0.5, 0, 40, 15)
+    shop.titleText = lui.Panel:new(shopWidth/2, 5, 0.5, 0, 40, 15)
         :setText("Shop")
         :setFont(self.defaultFont, Color.BLACK)
         :setParent(self.ui.shopMenu)
 
-    self.ui.shop.itemList = lui.ScrollList:new(shopWidth/2, 20, 0.5, 0, shopWidth-14, 120, self.outlineImages.yellow.pressed)
+    shop.itemList = lui.ScrollList:new(shopWidth/2, 20, 0.5, 0, shopWidth-14, 120, self.outlineImages.yellow.pressed)
         :setParent(self.ui.shopMenu)
         :setEntryHeight(30)
         :setEnable(false)
 
-    self.ui.shop.selectedItemPanel = nil
-    self.ui.shop.selectedItem = nil
-    self.ui.shop.newItemPanel = function(item)
+    shop.selectedItemPanel = nil
+    shop.selectedItem = nil
+    shop.newItemPanel = function(item)
         local panel = lui.Button:new(0, 0, 0, 0, 100, 100, self.outlineImages.blue)
             :setText(item.name .. "\t", "right")
             :setFont(self.defaultFont, Color.BLACK)
@@ -452,18 +483,18 @@ function Game:setupShopUI()
         return panel
     end
 
-    self.ui.shop.updateItems = function()
-        self.ui.shop.selectedItemPanel = nil
-        self.ui.shop.selectedItem = nil
-        self.ui.shop.itemList:clear()
-        self.ui.shop.items = iter(self.items.shopItems)
+    shop.updateItems = function()
+        shop.selectedItemPanel = nil
+        shop.selectedItem = nil
+        shop.itemList:clear()
+        shop.items = iter(self.items.shopItems)
             :map(function(item)
-                return self.ui.shop.newItemPanel(item)
+                return shop.newItemPanel(item)
             end)
             :totable()
     end
 
-    self.ui.shop.description = lui.Panel:new(shopWidth/2, shopHeight-24, 0.5, 1, shopWidth*0.8, shopHeight*0.2)
+    shop.description = lui.Panel:new(shopWidth/2, shopHeight-24, 0.5, 1, shopWidth*0.8, shopHeight*0.2)
         :setText(self.ui.shop.descriptionText)
         :setFont(self.minimalFont, Color.BLACK)
         :setParent(self.ui.shopMenu)
@@ -472,23 +503,29 @@ function Game:setupShopUI()
             return self.ui.shop.selectedItem.description or "<description>"
         end)
 
-    self.ui.shop.costPanel = lui.Panel:new(10, shopHeight-9, 0, 1, shopWidth*0.7, 10)
+    shop.costPanel = lui.Panel:new(10, shopHeight-9, 0, 1, shopWidth*0.7, 10)
         :setText("cost: 1000", "left")
         :setFont(self.minimalFont, Color.BLACK)
         :setParent(self.ui.shopMenu)
         :bindVar("text", function()
-            if self.ui.shop.selectedItem == nil then return "" end
-            return "cost: " .. (self.ui.shop.selectedItem.cost or "none")
+            if shop.selectedItem == nil then return "" end
+            return "cost: " .. (shop.selectedItem.cost or "none") .. (shop.selectedItem.isCash and " won" or " m")
         end)
 
-    self.ui.shop.buyButton = lui.Button:new(shopWidth-5, shopHeight-5, 1, 1, 40, 20, self.outlineImages.blue)
+    shop.buyButton = lui.Button:new(shopWidth-5, shopHeight-5, 1, 1, 40, 20, self.outlineImages.blue)
         :setText("Buy")
         :setFont(self.defaultFont, Color.BLACK)
         :setParent(self.ui.shopMenu)
         :onPress(function()
-            if self.ui.shop.selectedItem then
-                if self:useMoney(self.ui.shop.selectedItem.cost) then
-                    self.inventory:addItem(self.ui.shop.selectedItem.name)
+            if shop.selectedItem then
+                if shop.selectedItem.isCash == true then
+                    if self:useCash(shop.selectedItem.cost) then
+                        self.inventory:addItem(shop.selectedItem.name)
+                    end
+                else
+                    if self:useMoney(shop.selectedItem.cost) then
+                        self.inventory:addItem(shop.selectedItem.name)
+                    end
                 end
             end
         end)
@@ -512,7 +549,7 @@ function Game:setupInvUI()
         :setFont(self.defaultFont, Color.BLACK)
         :setParent(self.ui.invMenu)
 
-    inv.itemList = lui.ScrollGrid:new(invWidth/2, 20, 0.5, 0, 120, 120, self.outlineImages.yellow.pressed)
+    inv.itemList = lui.ScrollGrid:new(invWidth/2, 20, 0.5, 0, 120, 100, self.outlineImages.yellow.pressed)
         :setDimensions(4, 100)
         :setParent(self.ui.invMenu)
         :setEntrySize(24, 24)
@@ -559,7 +596,7 @@ function Game:setupInvUI()
             :totable()
     end
 
-    inv.description = lui.Panel:new(invWidth/2, invHeight-24, 0.5, 1, invWidth*0.8, invHeight*0.2)
+    inv.description = lui.Panel:new(invWidth/2, invHeight-44, 0.5, 1, invWidth*0.8, invHeight*0.2)
         :setText("<description>")
         :setFont(self.minimalFont, Color.BLACK)
         :setParent(self.ui.invMenu)
@@ -571,6 +608,15 @@ function Game:setupInvUI()
                     return "level " .. tostring(level).. "   \"" .. string.lower(name) .. "\""
                 else return self.ui.inv.selectedItem.description end
             else return "" end
+        end)
+
+    inv.valueText = lui.Panel:new(10, invHeight-20, 0, 1, 60, 20)
+        :setText("value: ", "left")
+        :setFont(self.minimalFont, Color.BLACK)
+        :setParent(self.ui.invMenu)
+        :bindVar("text", function()
+            if not inv.selectedItem or not inv.selectedItem.value then return "" end
+            return "value: " .. tostring(inv.selectedItem.value)
         end)
 
     inv.sellButton = lui.Button:new(invWidth-45, invHeight-5, 1, 1, 40, 20, self.outlineImages.blue)
@@ -608,6 +654,7 @@ function Game:setupGachaUI()
     self.ui.gacha = {}
     local gacha = self.ui.gacha
 
+    gacha.currentGachaItem = nil
     gacha.type = "regular"
     gacha.items = {}
 
@@ -624,7 +671,13 @@ function Game:setupGachaUI()
     gacha.openButton = lui.Button:new(gachaWidth/2, 190, 0.5, 0.5, 60, 30, self.outlineImages.yellow)
         :setText("Open!")
         :setFont(self.defaultFont, Color.BLACK)
+        :bindVar("isEnabled", function()
+            return gacha.currentGachaItem and self.inventory.items[gacha.currentGachaItem.name]
+                and self.inventory.items[gacha.currentGachaItem.name] > 0
+        end)
         :onPress(function()
+            local gachaLeft = self.inventory:removeItem(gacha.currentGachaItem.name)
+            if not gachaLeft then return end
             gacha.image.width, gacha.image.height = 64, 64
             gacha.image:setSprite(self.sprites.gacha)
             flux.to(gacha.image, 0.5, { width = gacha.image.width * 2, height = gacha.image.height * 2 })
@@ -659,7 +712,11 @@ function Game:setupGachaUI()
         :setText("Back")
         :setFont(self.defaultFont, Color.BLACK)
         :onPress(function()
+            for _, image in ipairs(gacha.itemImages) do
+                image:setSprite(self.sprites.mystery)
+            end
             self:closeGachaMenu()
+            self:toggleInvMenu()
         end)
         :setParent(self.ui.gachaMenu)
 
@@ -705,7 +762,7 @@ function Game:setupWorkUI()
         :setParent(work.rootFrame)
 
     work.message = lui.Panel:new(80, 140, 0.5, 0.5, 140, 40, self.outlineImages.blue.pressed)
-        :setText("you have earned 3000000 won! your family leaves you 100000 to spend.")
+        :setText("you have earned 3000000 won! your family leaves you 50000 to spend.")
         :setFont(self.minimalFont, Color.BLACK)
         :setEnable(false)
         :setParent(work.rootFrame)
@@ -716,7 +773,10 @@ function Game:setupWorkUI()
         :setEnable(false)
         :setParent(work.rootFrame)
         :onPress(function()
-            self:addCash(100000)
+            self:addCash(30000)
+            work.counter = 0
+            work.message:setEnable(false)
+            work.okButton:setEnable(false)
             self:closeWorkScene()
         end)
 end

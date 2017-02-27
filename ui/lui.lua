@@ -50,13 +50,13 @@ end
 
 function recursiveDraw(frame)
     frame:draw()
-    if frame.scissor then love.graphics.setScissor(unpack(frame.scissor)) end
+    --if frame.scissor then love.graphics.setScissor(unpack(frame.scissor)) end
     for _, child in ipairs(frame.children) do
         if child.isEnabled then
             recursiveDraw(child)
         end
     end
-    if frame.scissor then love.graphics.setScissor() end
+    --if frame.scissor then love.graphics.setScissor() end
 end
 function lui:draw()
     for _, frame in ipairs(self.frames) do

@@ -7,7 +7,7 @@ local shopItems = {
         img = "regular_gacha.png",
         description = "test your fate to get cool weapons and items!",
         isCash = true,
-        cost = 5000,
+        cost = 10000,
         behavior = function(self, game)
             game:openGachaMenu()
             game.ui.gacha.type = "regular"
@@ -35,7 +35,7 @@ local shopItems = {
         description = "prevent weapons from breaking while upgrading",
         cost = 1000000,
         behavior = function(self, game)
-            
+
         end
     }
 }

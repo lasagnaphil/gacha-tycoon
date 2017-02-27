@@ -6,8 +6,8 @@ function Game:initialize(gsm)
     self.name = "Game"
     self.moduleName = "game.lua"
 
-    self.gameMoney = 3000000
-    self.cash = 110000
+    self.gameMoney = 300000
+    self.cash = 10000
 
     self.ui = {}
     self.upgradeFailed = false
@@ -261,6 +261,7 @@ function Game:useItem(item)
     if item.type == "sword" then
         self:setItem(item.level)
         self:toggleInvMenu()
+        self.inventory:removeItem(item.name)
     end
     self.outOfMoneyMenuOpened = false
     self.ui.inv.updateItems()
@@ -773,7 +774,7 @@ function Game:setupWorkUI()
         :setEnable(false)
         :setParent(work.rootFrame)
         :onPress(function()
-            self:addCash(30000)
+            self:addCash(50000)
             work.counter = 0
             work.message:setEnable(false)
             work.okButton:setEnable(false)
